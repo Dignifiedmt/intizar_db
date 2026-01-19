@@ -1,5 +1,6 @@
 // app.js - COMPLETE FIXED FRONTEND FOR INTIZARUL IMAMUL MUNTAZAR
 // VERSION: 5.0.0 - COMPLETELY FIXED AND ENHANCED
+// THIS IS THE COMPLETE VERSION WITH ALL FIXES APPLIED
 
 const CONFIG = {
   API_URL: localStorage.getItem('iim_api_url') || 'https://script.google.com/macros/s/AKfycbyTOg9VXDLayr8Xrs3t6hjmKU6TFJDFlUCkQVTpbbgLIqdd2cnWvCR2p_4kLYOFj_9b9w/exec',
@@ -492,9 +493,11 @@ class App {
   }
 
   // ============================================
-  // FIX 1: IMPROVED LOGIN PAGE FUNCTION
+  // FIX 1: IMPROVED LOGIN PAGE FUNCTION - WITH REQUIRED ATTRIBUTE FIX
   // ============================================
   static setupLogin() {
+    console.log('🔧 Setting up login page with fixes...');
+    
     const urlParams = new URLSearchParams(location.search);
     const roleParam = urlParams.get('role');
     
@@ -505,7 +508,11 @@ class App {
     document.querySelectorAll('.role-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
+        
+        // Remove active class from all buttons
         document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+        
+        // Add active class to clicked button
         btn.classList.add('active');
         
         const role = btn.dataset.role;
@@ -513,30 +520,47 @@ class App {
           role === 'admin' ? 'Admin Login' : 'Branch Mas\'ul Login';
         
         const branchGroup = document.getElementById('branchGroup');
-        if (branchGroup) {
-          branchGroup.style.display = role === 'masul' ? 'block' : 'none';
-          
-          // If masul role, ensure branch is populated
+        const branchSelect = document.getElementById('branchSelect');
+        
+        if (branchGroup && branchSelect) {
           if (role === 'masul') {
-            this.populateBranches('branchSelect');
-            // Clear branch selection when switching to masul
-            document.getElementById('branchSelect').value = '';
+            branchGroup.style.display = 'block';
+            // CRITICAL FIX: Make branch required for masul ONLY
+            branchSelect.required = true;
+            // Populate branches if needed
+            if (branchSelect.options.length <= 1) {
+              this.populateBranches('branchSelect');
+            }
+          } else {
+            branchGroup.style.display = 'none';
+            // CRITICAL FIX: Remove required attribute for admin
+            branchSelect.required = false;
+            branchSelect.value = '';
           }
         }
         
         // Set focus to access code field
-        document.getElementById('accessCode').focus();
+        setTimeout(() => {
+          const accessCodeInput = document.getElementById('accessCode');
+          if (accessCodeInput) {
+            accessCodeInput.focus();
+          }
+        }, 100);
       });
-      
-      // Trigger click if this button matches URL param
-      if (roleParam && btn.dataset.role === roleParam) {
-        btn.click();
-      }
     });
     
-    // If no role param and no active button, default to admin
-    if (!roleParam && !document.querySelector('.role-btn.active')) {
-      document.getElementById('adminBtn').click();
+    // Set initial role based on URL parameter or default
+    if (roleParam === 'masul') {
+      const masulBtn = document.getElementById('masulBtn');
+      if (masulBtn) {
+        masulBtn.click();
+      }
+    } else {
+      // Default to admin
+      const adminBtn = document.getElementById('adminBtn');
+      if (adminBtn) {
+        adminBtn.click();
+      }
     }
     
     // Populate branches initially
@@ -546,103 +570,118 @@ class App {
     const accessCodeInput = document.getElementById('accessCode');
     const branchSelect = document.getElementById('branchSelect');
     
-    accessCodeInput.addEventListener('blur', () => this.validateField(accessCodeInput));
+    if (accessCodeInput) {
+      accessCodeInput.addEventListener('blur', () => this.validateField(accessCodeInput));
+    }
+    
     if (branchSelect) {
       branchSelect.addEventListener('change', () => this.validateField(branchSelect));
     }
     
-    // Login form submission
-    document.getElementById('loginForm').addEventListener('submit', async e => {
-      e.preventDefault();
-      
-      // Clear previous errors
-      this.clearLoginErrors();
-      
-      const activeBtn = document.querySelector('.role-btn.active');
-      if (!activeBtn) {
-        this.error('Please select a role (Admin or Branch Mas\'ul)');
-        document.getElementById('adminBtn').focus();
-        return;
-      }
-      
-      const role = activeBtn.dataset.role;
-      const branch = document.getElementById('branchSelect')?.value || '';
-      const code = document.getElementById('accessCode').value.trim();
-      
-      // Validation
-      let isValid = true;
-      
-      if (!code) {
-        this.markInvalid(accessCodeInput, 'Access code is required');
-        isValid = false;
-      } else if (code.length < 4) {
-        this.markInvalid(accessCodeInput, 'Access code must be at least 4 characters');
-        isValid = false;
-      }
-      
-      if (role === 'masul' && !branch) {
-        this.markInvalid(branchSelect, 'Please select your branch');
-        isValid = false;
-      }
-      
-      if (!isValid) {
-        this.error('Please fix the errors above');
-        return;
-      }
-      
-      // Show loading
-      this.showLoginLoading(true);
-      
-      try {
-        const res = await this.api('login', { 
-          role, 
-          accessCode: code, 
-          branch: role === 'masul' ? branch : '' 
-        });
+    // FIXED: Login form submission - handle required field validation properly
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+      loginForm.addEventListener('submit', async e => {
+        e.preventDefault();
         
-        // Store login data
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('userRole', role);
-        localStorage.setItem('userBranch', branch || '');
-        localStorage.setItem('loginTime', new Date().toISOString());
-        localStorage.setItem('userName', role === 'admin' ? 'Administrator' : `Mas'ul (${branch})`);
+        console.log('📝 Login form submitted');
         
-        this.success('Login successful! Redirecting...');
+        // Clear previous errors
+        this.clearLoginErrors();
         
-        setTimeout(() => {
-          location.href = role === 'admin' ? 'dashboard.html' : 'register.html';
-        }, 1500);
-        
-      } catch (err) {
-        console.error('Login failed:', err);
-        this.showLoginLoading(false);
-        
-        // Specific error messages
-        let errorMsg = 'Login failed';
-        if (err.message.includes('Invalid admin access code') || 
-            err.message.includes('Invalid masul access code')) {
-          errorMsg = 'Incorrect access code';
-          accessCodeInput.select();
-        } else if (err.message.includes('Branch is required')) {
-          errorMsg = 'Please select your branch';
-          branchSelect?.focus();
-        } else if (err.message.includes('Invalid branch')) {
-          errorMsg = 'Selected branch is not valid';
-          branchSelect?.focus();
-        } else if (err.message.includes('Failed to fetch')) {
-          errorMsg = 'Cannot connect to server. Check internet and API URL.';
+        const activeBtn = document.querySelector('.role-btn.active');
+        if (!activeBtn) {
+          this.error('Please select a role (Admin or Branch Mas\'ul)');
+          document.getElementById('adminBtn').focus();
+          return;
         }
         
-        this.error(errorMsg);
+        const role = activeBtn.dataset.role;
+        const branchSelectElement = document.getElementById('branchSelect');
+        const branch = role === 'masul' ? (branchSelectElement?.value || '') : '';
+        const code = document.getElementById('accessCode').value.trim();
         
-        // Store error for retry
-        localStorage.setItem('loginError', JSON.stringify({
-          role,
-          branch,
-          timestamp: Date.now()
-        }));
-      }
-    });
+        console.log(`Login attempt - Role: ${role}, Branch: ${branch}, Code: ${code}`);
+        
+        // Validation
+        let isValid = true;
+        
+        if (!code) {
+          this.markInvalid(accessCodeInput, 'Access code is required');
+          isValid = false;
+        }
+        
+        if (role === 'masul') {
+          if (!branch) {
+            this.markInvalid(branchSelectElement, 'Please select your branch');
+            isValid = false;
+          }
+        }
+        
+        if (!isValid) {
+          this.error('Please fix the errors above');
+          return;
+        }
+        
+        // Show loading
+        this.showLoginLoading(true);
+        
+        try {
+          console.log(`Calling API for ${role} login...`);
+          const res = await this.api('login', { 
+            role, 
+            accessCode: code, 
+            branch: role === 'masul' ? branch : '' 
+          });
+          
+          console.log('✅ Login successful:', res);
+          
+          // Store login data
+          localStorage.setItem('isLoggedIn', 'true');
+          localStorage.setItem('userRole', role);
+          localStorage.setItem('userBranch', branch || '');
+          localStorage.setItem('loginTime', new Date().toISOString());
+          localStorage.setItem('userName', role === 'admin' ? 'Administrator' : `Mas'ul (${branch})`);
+          
+          this.success('Login successful! Redirecting...');
+          
+          setTimeout(() => {
+            location.href = role === 'admin' ? 'dashboard.html' : 'register.html';
+          }, 1500);
+          
+        } catch (err) {
+          console.error('❌ Login failed:', err);
+          this.showLoginLoading(false);
+          
+          // Specific error messages
+          let errorMsg = 'Login failed. Please try again.';
+          if (err.message.includes('Invalid admin access code') || 
+              err.message.includes('Invalid masul access code')) {
+            errorMsg = 'Incorrect access code';
+            accessCodeInput.select();
+            accessCodeInput.focus();
+          } else if (err.message.includes('Branch is required')) {
+            errorMsg = 'Please select your branch';
+            branchSelectElement?.focus();
+          } else if (err.message.includes('Invalid branch')) {
+            errorMsg = 'Selected branch is not valid';
+            branchSelectElement?.focus();
+          } else if (err.message.includes('Failed to fetch')) {
+            errorMsg = 'Cannot connect to server. Please check your internet connection and API URL.';
+          }
+          
+          this.error(errorMsg);
+          
+          // Store error for retry
+          localStorage.setItem('loginError', JSON.stringify({
+            role,
+            branch,
+            timestamp: Date.now(),
+            message: errorMsg
+          }));
+        }
+      });
+    }
     
     // Check for previous login error
     const loginError = localStorage.getItem('loginError');
@@ -650,7 +689,7 @@ class App {
       try {
         const errorData = JSON.parse(loginError);
         if (Date.now() - errorData.timestamp < 300000) { // 5 minutes
-          this.error('Previous login attempt failed. Please try again.');
+          this.error(`Previous login attempt failed: ${errorData.message || 'Unknown error'}`);
         }
         localStorage.removeItem('loginError');
       } catch (e) {
@@ -660,7 +699,10 @@ class App {
     
     // Auto-focus access code field
     setTimeout(() => {
-      document.getElementById('accessCode').focus();
+      const accessCodeInput = document.getElementById('accessCode');
+      if (accessCodeInput) {
+        accessCodeInput.focus();
+      }
     }, 500);
   }
 
@@ -716,6 +758,9 @@ class App {
   static populateBranches(selectId) {
     const select = document.getElementById(selectId);
     if (!select) return;
+    
+    // Only populate if empty or has only default option
+    if (select.options.length > 1) return;
     
     select.innerHTML = '<option value="">Select Branch</option>';
     
@@ -948,23 +993,23 @@ class App {
       });
     });
     
-    // Form tabs with improved navigation
-    document.querySelectorAll('.form-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        const tabId = tab.dataset.tab;
+    // FIXED: Form tabs with improved navigation - CORRECT SELECTORS
+    document.querySelectorAll('.step').forEach(step => {
+      step.addEventListener('click', () => {
+        const stepId = step.dataset.step;
         
-        document.querySelectorAll('.form-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
         
-        tab.classList.add('active');
-        document.getElementById(tabId + 'Tab').classList.add('active');
+        step.classList.add('active');
+        document.getElementById(stepId + 'Tab').classList.add('active');
         
         // Update progress bar
-        this.updateFormProgress(tabId);
+        this.updateFormProgress(stepId);
       });
     });
     
-    // Next/Previous buttons
+    // FIXED: Next/Previous buttons - CORRECT SELECTORS
     document.querySelectorAll('.next-tab').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -975,7 +1020,7 @@ class App {
         
         if (currentIndex < tabs.length - 1) {
           const nextTab = tabs[currentIndex + 1];
-          document.querySelector(`.form-tab[data-tab="${nextTab}"]`).click();
+          document.querySelector(`.step[data-step="${nextTab}"]`).click();
         }
       });
     });
@@ -990,7 +1035,7 @@ class App {
         
         if (currentIndex > 0) {
           const prevTab = tabs[currentIndex - 1];
-          document.querySelector(`.form-tab[data-tab="${prevTab}"]`).click();
+          document.querySelector(`.step[data-step="${prevTab}"]`).click();
         }
       });
     });
@@ -1230,7 +1275,7 @@ class App {
         document.getElementById('masulPhotoPreview').style.display = 'none';
         document.getElementById('photoInput').dataset.base64 = '';
         document.getElementById('masulPhotoInput').dataset.base64 = '';
-        document.querySelector('.form-tab[data-tab="personal"]').click();
+        document.querySelector('.step[data-step="personal"]').click();
       };
     }
   }
@@ -1769,9 +1814,6 @@ class App {
     return modal;
   }
 
-  // ============================================
-  // FIX 3: IMAGE DISPLAY IN MODAL - Use fixDriveImageUrl
-  // ============================================
   static createMemberDetailsHTML(data) {
     return `
       <div class="member-profile">
