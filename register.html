@@ -8,14 +8,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     
-    <!-- KEEPING THE ENHANCED STYLE TAGS AS INSTRUCTED -->
+    <!-- Enhanced Registration Styles -->
     <style>
         /* Enhanced form styles */
         .form-progress {
             background: #e9ecef;
             height: 6px;
             border-radius: 3px;
-            margin: 20px 0;
+            margin: 20px 0 40px;
             overflow: hidden;
         }
         
@@ -35,7 +35,7 @@
         .form-step-indicator {
             display: flex;
             justify-content: space-between;
-            margin: 20px 0 40px;
+            margin: 40px 0 30px;
             position: relative;
         }
         
@@ -43,6 +43,19 @@
             text-align: center;
             position: relative;
             z-index: 1;
+            flex: 1;
+            cursor: pointer;
+        }
+        
+        .step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            width: 100%;
+            height: 2px;
+            background: #e9ecef;
+            z-index: -1;
         }
         
         .step-number {
@@ -83,6 +96,10 @@
             font-weight: 600;
         }
         
+        .step.completed .step-label {
+            color: #28a745;
+        }
+        
         .form-navigation {
             display: flex;
             justify-content: space-between;
@@ -92,7 +109,12 @@
         }
         
         .form-section {
+            display: none;
             animation: fadeIn 0.5s ease;
+        }
+        
+        .form-section.active {
+            display: block;
         }
         
         @keyframes fadeIn {
@@ -147,6 +169,11 @@
             border-radius: 10px;
             border: 3px solid #228B22;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .photo-preview.show {
+            display: block;
         }
         
         .photo-remove {
@@ -160,9 +187,10 @@
             width: 30px;
             height: 30px;
             cursor: pointer;
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
+            z-index: 10;
         }
         
         /* Enhanced input styling */
@@ -296,42 +324,6 @@
             z-index: 1;
         }
         
-        /* Responsive improvements */
-        @media (max-width: 768px) {
-            .id-body {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .id-row {
-                flex-direction: column;
-                text-align: left;
-            }
-            
-            .id-label {
-                width: 100%;
-                margin-bottom: 5px;
-            }
-            
-            .step-indicator {
-                flex-wrap: wrap;
-            }
-            
-            .step {
-                flex: 0 0 33.333%;
-                margin-bottom: 15px;
-            }
-            
-            .form-navigation {
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .form-navigation button {
-                width: 100%;
-            }
-        }
-        
         /* Success animation */
         .success-check {
             width: 100px;
@@ -407,6 +399,81 @@
         input:checked + .toggle-slider:before {
             transform: translateX(30px);
         }
+        
+        /* Responsive improvements */
+        @media (max-width: 768px) {
+            .id-body {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .id-row {
+                flex-direction: column;
+                text-align: center;
+                gap: 5px;
+            }
+            
+            .id-label {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+            
+            .form-step-indicator {
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+            }
+            
+            .step:not(:last-child)::after {
+                display: none;
+            }
+            
+            .form-navigation {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .form-navigation button {
+                width: 100%;
+            }
+        }
+        
+        /* Mas'ul form toggle */
+        .masul-toggle {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            gap: 15px;
+        }
+        
+        /* Loading state */
+        .loading-state {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .loading-state.active {
+            display: block;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #228B22;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -414,7 +481,7 @@
     <header class="navbar">
         <div class="container navbar-container">
             <div class="logo">
-                <img src="logo.png" alt="IIM Logo" class="logo-img">
+                <img src="https://via.placeholder.com/50/228B22/FFFFFF?text=IIM" alt="IIM Logo" class="logo-img">
                 <div class="logo-text">
                     <h1 style="margin: 0; line-height: 1.2; font-size: 1.8rem;" class="arabic-text">إنتظار الإمام المنتظر</h1>
                     <p style="margin: 5px 0 0 0; font-size: 0.9rem;" class="arabic-text">مؤسسة أبي الفضل العباس (تربير روح د غنغر جكي)</p>
@@ -448,7 +515,7 @@
                 </p>
                 
                 <!-- Mas'ul Toggle -->
-                <div class="masul-toggle" id="masulToggleContainer" style="display: none; margin-top: 1.5rem;">
+                <div class="masul-toggle" id="masulToggleContainer" style="display: none;">
                     <label class="toggle-switch">
                         <input type="checkbox" id="masulToggle">
                         <span class="toggle-slider"></span>
@@ -456,6 +523,12 @@
                     <span style="margin-left: 1rem; font-weight: 500;">Register Mas'ul (Admin Only)</span>
                 </div>
             </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-state" id="loadingState">
+            <div class="loading-spinner"></div>
+            <p>Processing registration...</p>
         </div>
 
         <!-- Registration Form Container -->
@@ -644,8 +717,8 @@
                                     <p>Click to upload or drag & drop passport photograph</p>
                                     <p><small>Maximum size: 2MB | Format: JPG, PNG</small></p>
                                     <div class="photo-preview-container">
-                                        <img id="photoPreview" class="photo-preview" alt="Photo preview" style="display: none;">
-                                        <button type="button" class="photo-remove" onclick="document.getElementById('photoInput').value='';document.getElementById('photoPreview').style.display='none';document.getElementById('photoInput').dataset.base64='';" style="display: none;">
+                                        <img id="photoPreview" class="photo-preview" alt="Photo preview">
+                                        <button type="button" class="photo-remove" id="photoRemoveBtn">
                                             <i class="fas fa-times"></i>
                                         </button>
                                     </div>
@@ -659,7 +732,7 @@
                             <button type="button" class="btn btn-secondary prev-tab">
                                 <i class="fas fa-arrow-left"></i> Previous
                             </button>
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary" id="submitMemberBtn">
                                 <i class="fas fa-save"></i> Register Member
                             </button>
                         </div>
@@ -700,7 +773,7 @@
                             <label for="masulPhone2">Phone Number 2</label>
                             <input type="tel" id="masulPhone2" class="form-control" placeholder="Enter secondary phone number">
                         </div>
-                        <!-- Added Gender field as per Change 5.2 -->
+                        <!-- Added Gender field -->
                         <div class="form-group">
                             <label for="masulGender">Gender <span class="required-star">*</span></label>
                             <select id="masulGender" class="form-control" required>
@@ -759,8 +832,8 @@
                                 <p>Click to upload or drag & drop passport photograph</p>
                                 <p><small>Maximum size: 2MB | Format: JPG, PNG</small></p>
                                 <div class="photo-preview-container">
-                                    <img id="masulPhotoPreview" class="photo-preview" alt="Photo preview" style="display: none;">
-                                    <button type="button" class="photo-remove" onclick="document.getElementById('masulPhotoInput').value='';document.getElementById('masulPhotoPreview').style.display='none';document.getElementById('masulPhotoInput').dataset.base64='';" style="display: none;">
+                                    <img id="masulPhotoPreview" class="photo-preview" alt="Photo preview">
+                                    <button type="button" class="photo-remove" id="masulPhotoRemoveBtn">
                                         <i class="fas fa-times"></i>
                                     </button>
                                 </div>
@@ -782,7 +855,7 @@
                         <button type="button" class="btn btn-secondary" id="cancelMasulForm">
                             <i class="fas fa-times"></i> Cancel
                         </button>
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-primary" id="submitMasulBtn">
                             <i class="fas fa-save"></i> Register Mas'ul
                         </button>
                     </div>
@@ -846,11 +919,10 @@
                 </div>
                 
                 <div class="print-actions" style="text-align: center; margin-top: 20px;">
-                    <!-- Fixed print button as per Change 5.3 -->
-                    <button class="btn btn-secondary" onclick="App.printIdCard()" style="background: white; color: #228B22; border: 2px solid white;">
+                    <button class="btn btn-secondary" onclick="App.printIdCard()" style="background: white; color: #228B22; border: 2px solid white; margin: 5px;">
                         <i class="fas fa-print"></i> Print ID Card
                     </button>
-                    <button class="btn btn-primary" id="registerAnother" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid white;">
+                    <button class="btn btn-primary" id="registerAnother" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid white; margin: 5px;">
                         <i class="fas fa-user-plus"></i> Register Another
                     </button>
                 </div>
@@ -859,5 +931,129 @@
     </main>
 
     <script src="app.js"></script>
+    <script>
+        // Tab switching functionality
+        function updateFormProgress(currentStep) {
+            const progressBar = document.getElementById('formProgress');
+            if (!progressBar) return;
+            
+            const steps = ['personal', 'contact', 'membership'];
+            const currentIndex = steps.indexOf(currentStep);
+            const progress = ((currentIndex + 1) / steps.length) * 100;
+            
+            progressBar.style.width = `${progress}%`;
+            progressBar.textContent = `${Math.round(progress)}%`;
+        }
+        
+        // Wait for DOM to load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Registration page initialized');
+            
+            // Initialize tab switching
+            setTimeout(() => {
+                const steps = document.querySelectorAll('.step');
+                const sections = document.querySelectorAll('.form-section');
+                
+                // Set initial state
+                updateFormProgress('personal');
+                
+                // Add click handlers to steps
+                steps.forEach(step => {
+                    step.addEventListener('click', function() {
+                        const stepId = this.dataset.step;
+                        
+                        // Update steps
+                        steps.forEach(s => {
+                            s.classList.remove('active');
+                            s.classList.remove('completed');
+                        });
+                        
+                        this.classList.add('active');
+                        
+                        // Mark previous steps as completed
+                        const stepArray = Array.from(steps);
+                        const currentIndex = stepArray.indexOf(this);
+                        for (let i = 0; i < currentIndex; i++) {
+                            stepArray[i].classList.add('completed');
+                        }
+                        
+                        // Show corresponding section
+                        sections.forEach(section => {
+                            section.classList.remove('active');
+                        });
+                        
+                        const targetSection = document.getElementById(stepId + 'Tab');
+                        if (targetSection) {
+                            targetSection.classList.add('active');
+                        }
+                        
+                        // Update progress
+                        updateFormProgress(stepId);
+                        
+                        // Update button states
+                        const prevButtons = document.querySelectorAll('.prev-tab');
+                        const nextButtons = document.querySelectorAll('.next-tab');
+                        
+                        if (stepId === 'personal') {
+                            prevButtons.forEach(btn => btn.disabled = true);
+                        } else {
+                            prevButtons.forEach(btn => btn.disabled = false);
+                        }
+                        
+                        if (stepId === 'membership') {
+                            nextButtons.forEach(btn => btn.style.display = 'none');
+                        } else {
+                            nextButtons.forEach(btn => btn.style.display = 'inline-flex');
+                        }
+                    });
+                });
+                
+                // Next button handlers
+                document.querySelectorAll('.next-tab').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const currentSection = document.querySelector('.form-section.active');
+                        if (!currentSection) return;
+                        
+                        const currentStepId = currentSection.id.replace('Tab', '');
+                        const steps = ['personal', 'contact', 'membership'];
+                        const currentIndex = steps.indexOf(currentStepId);
+                        
+                        if (currentIndex < steps.length - 1) {
+                            const nextStep = steps[currentIndex + 1];
+                            const nextStepElement = document.querySelector(`.step[data-step="${nextStep}"]`);
+                            if (nextStepElement) {
+                                nextStepElement.click();
+                            }
+                        }
+                    });
+                });
+                
+                // Previous button handlers
+                document.querySelectorAll('.prev-tab').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const currentSection = document.querySelector('.form-section.active');
+                        if (!currentSection) return;
+                        
+                        const currentStepId = currentSection.id.replace('Tab', '');
+                        const steps = ['personal', 'contact', 'membership'];
+                        const currentIndex = steps.indexOf(currentStepId);
+                        
+                        if (currentIndex > 0) {
+                            const prevStep = steps[currentIndex - 1];
+                            const prevStepElement = document.querySelector(`.step[data-step="${prevStep}"]`);
+                            if (prevStepElement) {
+                                prevStepElement.click();
+                            }
+                        }
+                    });
+                });
+                
+                // Initialize App if available
+                if (window.App) {
+                    window.App.init();
+                }
+            }, 100);
+        });
+    </script>
 </body>
 </html>
