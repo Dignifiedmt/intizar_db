@@ -930,29 +930,39 @@
         </div>
     </main>
 
+    <!-- Debug button (remove after fixing) -->
+    <button onclick="App.debugRegistration()" style="
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #ff9800;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 10000;
+        font-weight: bold;
+    ">
+        🐛 Debug
+    </button>
+
     <script src="app.js"></script>
     <script>
-        // Tab switching functionality - FIXED
-        function updateFormProgress(currentStep) {
-            const progressBar = document.getElementById('formProgress');
-            if (!progressBar) return;
-            
-            const steps = ['personal', 'contact', 'membership'];
-            const currentIndex = steps.indexOf(currentStep);
-            const progress = ((currentIndex + 1) / steps.length) * 100;
-            
-            progressBar.style.width = `${progress}%`;
-            progressBar.textContent = `${Math.round(progress)}%`;
-        }
-        
-        // Wait for DOM to load
+        // Wait for App to load
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Registration page initialized - FIXED VERSION');
-            
-            // Initialize tab switching
-            setTimeout(() => {
-                const steps = document.querySelectorAll('.step');
-                const sections = document.querySelectorAll('.form-section');
+            console.log('Registration page loaded');
+            if (window.App && typeof App.init === 'function') {
+                console.log('Calling App.init()');
+                App.init();
+            } else {
+                console.error('App not loaded');
+                setTimeout(() => location.reload(), 1000);
+            }
+        });
+    </script>
+</body>
+</html>                const sections = document.querySelectorAll('.form-section');
                 
                 // Set initial state
                 updateFormProgress('personal');

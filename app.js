@@ -1,5 +1,5 @@
 // app.js - COMPLETE FIXED FRONTEND FOR INTIZARUL IMAMUL MUNTAZAR
-// VERSION: 5.2.0 - ALL FIXES APPLIED
+// VERSION: 6.0.0 - ALL FIXES APPLIED WITH WORKING REGISTRATION
 // LAST UPDATED: 2024
 
 const CONFIG = {
@@ -365,22 +365,17 @@ class App {
     return url;
   }
 
-  static async api(action, data = {}, options = {}) {
+  static async api(action, data = {}) {
     console.log(`📡 API Request: ${action}`, data);
     
     if (!CONFIG.API_URL) {
       throw new Error('API URL not configured. Please set up backend URL.');
     }
     
-    const { showLoader = true, suppressError = false } = options;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), CONFIG.REQUEST_TIMEOUT);
     
     try {
-      if (showLoader && action !== 'login') {
-        this.loading(true);
-      }
-      
       const requestData = {
         action,
         ...data,
@@ -425,77 +420,59 @@ class App {
       clearTimeout(timeoutId);
       console.error('❌ API Call Failed:', error);
       
-      if (!suppressError) {
-        let userMessage;
-        if (error.name === 'AbortError') {
-          userMessage = 'Request timeout. Please try again.';
-        } else if (error.message.includes('Failed to fetch')) {
-          userMessage = 'Cannot connect to server. Please check your internet connection and API URL.';
-        } else {
-          userMessage = error.message;
-        }
-        
-        this.error(userMessage);
+      let userMessage;
+      if (error.name === 'AbortError') {
+        userMessage = 'Request timeout. Please try again.';
+      } else if (error.message.includes('Failed to fetch')) {
+        userMessage = 'Cannot connect to server. Please check your internet connection and API URL.';
+      } else {
+        userMessage = error.message;
       }
       
+      this.error(userMessage);
       throw error;
-    } finally {
-      if (showLoader && action !== 'login') {
-        this.loading(false);
-      }
     }
   }
 
   static loading(show = true, msg = 'Loading...') {
-    // Debounce loading to prevent multiple calls
-    clearTimeout(this.loadingTimeout);
+    let loader = document.getElementById('globalLoader');
     
-    if (!show) {
-      const loader = document.getElementById('globalLoader');
-      if (loader) {
-        loader.remove();
-      }
-      return;
-    }
-    
-    this.loadingTimeout = setTimeout(() => {
-      let loader = document.getElementById('globalLoader');
-      
-      if (!loader) {
-        loader = document.createElement('div');
-        loader.id = 'globalLoader';
-        loader.style.cssText = `
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: rgba(0,0,0,0.8);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          z-index: 9999;
-          color: white;
-        `;
-        loader.innerHTML = `
-          <div class="loading-spinner" style="
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #228B22;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-          "></div>
-          <p style="margin-top: 20px; font-size: 16px;">${msg}</p>
-        `;
-        document.body.appendChild(loader);
-      } else {
-        loader.style.display = 'flex';
+    if (!loader && show) {
+      loader = document.createElement('div');
+      loader.id = 'globalLoader';
+      loader.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        color: white;
+      `;
+      loader.innerHTML = `
+        <div class="loading-spinner" style="
+          width: 50px;
+          height: 50px;
+          border: 5px solid #f3f3f3;
+          border-top: 5px solid #228B22;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        "></div>
+        <p style="margin-top: 20px; font-size: 16px;">${msg}</p>
+      `;
+      document.body.appendChild(loader);
+    } else if (loader) {
+      loader.style.display = show ? 'flex' : 'none';
+      if (show && msg) {
         const p = loader.querySelector('p');
-        if (p && msg) p.textContent = msg;
+        if (p) p.textContent = msg;
       }
-    }, 300);
+    }
   }
 
   static error(msg) {
@@ -813,14 +790,10 @@ class App {
       branchSelect.addEventListener('change', () => this.validateField(branchSelect));
     }
     
-    // Login form submission - FIXED: Use proper event delegation
+    // Login form submission
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
-      // Remove any existing event listeners
-      loginForm.replaceWith(loginForm.cloneNode(true));
-      const newLoginForm = document.getElementById('loginForm');
-      
-      newLoginForm.addEventListener('submit', async e => {
+      loginForm.addEventListener('submit', async e => {
         e.preventDefault();
         
         console.log('📝 Login form submitted');
@@ -861,7 +834,7 @@ class App {
           return;
         }
         
-        // Show loading - FIXED: Only show login-specific loader
+        // Show loading
         this.showLoginLoading(true);
         
         try {
@@ -870,7 +843,7 @@ class App {
             role, 
             accessCode: code, 
             branch: role === 'masul' ? branch : '' 
-          }, { showLoader: false });
+          });
           
           console.log('✅ Login successful:', res);
           
@@ -927,7 +900,7 @@ class App {
       }
     }, 500);
     
-    // Check backend status - FIXED: Don't trigger loading
+    // Check backend status
     setTimeout(() => {
       this.checkBackendStatus();
     }, 1000);
@@ -943,7 +916,6 @@ class App {
     try {
       const apiUrl = localStorage.getItem('iim_api_url') || CONFIG.API_URL;
       
-      // FIXED: Don't show loading for status check
       const response = await fetch(apiUrl, { 
         method: 'GET',
         cache: 'no-cache'
@@ -1090,14 +1062,15 @@ class App {
   }
 
   // ============================================
-  // FIXED REGISTRATION PAGE
+  // FIXED REGISTRATION PAGE - COMPLETELY REWRITTEN
   // ============================================
   static setupRegister() {
-    console.log('Setting up registration page...');
+    console.log('🔧 Setting up registration page...');
     
-    // Wait for DOM to be ready
-    setTimeout(() => {
-      // Show current user info
+    const initRegistration = () => {
+      console.log('DOM ready for registration setup');
+      
+      // 1. Show current user info
       const userName = localStorage.getItem('userName') || 'User';
       const userBranch = localStorage.getItem('userBranch');
       const currentBranch = document.getElementById('currentBranch');
@@ -1106,7 +1079,7 @@ class App {
         currentBranch.textContent = userBranch ? `Branch: ${userBranch}` : `User: ${userName}`;
       }
       
-      // Admin can register Mas'ul
+      // 2. Admin can register Mas'ul
       const userRole = localStorage.getItem('userRole');
       const masulToggleContainer = document.getElementById('masulToggleContainer');
       
@@ -1114,12 +1087,12 @@ class App {
         masulToggleContainer.style.display = 'block';
       }
       
-      // Initialize form elements
+      // 3. Initialize form elements
       this.populateZones('zone', 'branch');
       this.populateYears('recruitmentYear');
       this.setupPhoto('photoUpload', 'photoInput', 'photoPreview');
       
-      // Set date limits
+      // 4. Set date limits
       const today = new Date();
       const minDate = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
       const maxDate = new Date(today.getFullYear() - 8, today.getMonth(), today.getDate());
@@ -1137,29 +1110,45 @@ class App {
         masulBirthDate.setAttribute('max', maxDate.toISOString().split('T')[0]);
       }
       
-      // Phone validation
+      // 5. Phone validation
       document.querySelectorAll('input[type="tel"]').forEach(input => {
         input.addEventListener('input', function(e) {
           this.value = this.value.replace(/[^0-9+]/g, '');
         });
       });
       
-      // Setup tab switching with proper event delegation
+      // ✅✅✅ CRITICAL FIX 1: Setup tab switching
       this.setupFormTabs();
       
-      // FIXED: Member registration form - prevent duplicate event listeners
-      const memberForm = document.getElementById('memberRegistrationForm');
-      if (memberForm) {
-        memberForm.replaceWith(memberForm.cloneNode(true));
-        const newMemberForm = document.getElementById('memberRegistrationForm');
+      // ✅✅✅ CRITICAL FIX 2: Member registration form
+      const setupMemberForm = () => {
+        const memberForm = document.getElementById('memberRegistrationForm');
+        console.log('Looking for member form:', memberForm);
         
-        newMemberForm.addEventListener('submit', async e => {
+        if (!memberForm) {
+          console.error('Member form not found, retrying...');
+          setTimeout(setupMemberForm, 100);
+          return;
+        }
+        
+        // Remove existing listener if any
+        const oldForm = memberForm.cloneNode(true);
+        memberForm.parentNode.replaceChild(oldForm, memberForm);
+        
+        // Attach new listener
+        document.getElementById('memberRegistrationForm').addEventListener('submit', async (e) => {
           e.preventDefault();
-          await this.handleMemberRegistration();
+          e.stopPropagation();
+          console.log('✅ Member form SUBMITTED!');
+          await App.handleMemberRegistration();
         });
-      }
+        
+        console.log('✅ Member form event listener attached');
+      };
       
-      // Mas'ul registration toggle
+      setupMemberForm();
+      
+      // 6. Mas'ul registration toggle
       const masulToggle = document.getElementById('masulToggle');
       if (masulToggle) {
         masulToggle.addEventListener('change', e => {
@@ -1189,19 +1178,16 @@ class App {
         });
       }
       
-      // FIXED: Mas'ul registration form - prevent duplicate event listeners
+      // 7. Mas'ul registration form
       const masulForm = document.getElementById('masulRegistrationForm');
       if (masulForm) {
-        masulForm.replaceWith(masulForm.cloneNode(true));
-        const newMasulForm = document.getElementById('masulRegistrationForm');
-        
-        newMasulForm.addEventListener('submit', async e => {
+        masulForm.addEventListener('submit', async e => {
           e.preventDefault();
           await this.handleMasulRegistration();
         });
       }
       
-      // Cancel Mas'ul form
+      // 8. Cancel Mas'ul form
       const cancelMasulBtn = document.getElementById('cancelMasulForm');
       if (cancelMasulBtn) {
         cancelMasulBtn.addEventListener('click', () => {
@@ -1214,7 +1200,14 @@ class App {
       }
       
       console.log('✅ Registration page setup complete');
-    }, 100);
+    };
+    
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initRegistration);
+    } else {
+      initRegistration();
+    }
   }
 
   static setupFormTabs() {
@@ -1477,39 +1470,57 @@ class App {
   }
 
   static async handleMemberRegistration() {
-    // Validate all required fields first
-    const requiredFields = [
-      'fullName', 'firstName', 'fatherName', 'birthDate', 'gender',
-      'residentialAddress', 'phone1', 'memberLevel', 'zone', 'branch',
-      'recruitmentYear'
-    ];
-    
-    let isValid = true;
-    requiredFields.forEach(field => {
-      const element = document.getElementById(field);
-      if (element && !element.value.trim()) {
-        element.classList.add('invalid');
-        isValid = false;
-        this.error(`Please fill in ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`);
-      }
-    });
-    
-    if (!isValid) return;
-    
-    // Validate date
-    const birthDate = new Date(document.getElementById('birthDate').value);
-    const today = new Date();
-    const minAge = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
-    const maxAge = new Date(today.getFullYear() - 8, today.getMonth(), today.getDate());
-    
-    if (birthDate < minAge || birthDate > maxAge) {
-      this.error('Age must be between 8 and 100 years');
-      return;
-    }
-    
-    this.loading(true, 'Registering member...');
+    console.log('🔴 DEBUG: handleMemberRegistration called');
     
     try {
+      // Show loading
+      this.loading(true, 'Registering member...');
+      
+      // Validate all required fields first
+      const requiredFields = [
+        'fullName', 'firstName', 'fatherName', 'birthDate', 'gender',
+        'residentialAddress', 'phone1', 'memberLevel', 'zone', 'branch',
+        'recruitmentYear'
+      ];
+      
+      let isValid = true;
+      let errorMessage = '';
+      
+      // Collect all errors
+      requiredFields.forEach(field => {
+        const element = document.getElementById(field);
+        const value = element ? element.value.trim() : '';
+        
+        if (!value) {
+          isValid = false;
+          element.classList.add('invalid');
+          const fieldName = field.replace(/([A-Z])/g, ' $1').toLowerCase();
+          errorMessage += `• ${fieldName} is required\n`;
+        } else {
+          if (element) element.classList.remove('invalid');
+        }
+      });
+      
+      // If invalid, show alert and return
+      if (!isValid) {
+        alert('Please fix the following errors:\n\n' + errorMessage);
+        this.loading(false);
+        return;
+      }
+      
+      // Validate date
+      const birthDate = new Date(document.getElementById('birthDate').value);
+      const today = new Date();
+      const minAge = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
+      const maxAge = new Date(today.getFullYear() - 8, today.getMonth(), today.getDate());
+      
+      if (birthDate < minAge || birthDate > maxAge) {
+        alert('Age must be between 8 and 100 years');
+        this.loading(false);
+        return;
+      }
+      
+      // Prepare data
       const photoInput = document.getElementById('photoInput');
       
       const formData = {
@@ -1537,18 +1548,42 @@ class App {
         photoBase64: photoInput?.dataset.base64 || ''
       };
       
-      console.log('Submitting member registration:', formData);
+      console.log('Sending registration data:', formData);
+      
+      // Call API
       const res = await this.api('registerMember', formData);
       
-      if (res.success) {
-        this.showIdCard(res.data);
-        this.success('Member registered successfully!');
-      } else {
-        throw new Error(res.message || 'Registration failed');
-      }
+      // Show success
+      alert('✅ Member registered successfully!\n\n' +
+            `Global ID: ${res.data.globalId}\n` +
+            `Recruitment ID: ${res.data.recruitmentId}\n` +
+            `Name: ${res.data.fullName}\n` +
+            `Branch: ${res.data.branch}`);
+      
+      this.showIdCard(res.data);
+      this.success('Member registered successfully!');
+      
     } catch (err) {
       console.error('Registration error:', err);
-      this.error(err.message || 'Registration failed. Please try again.');
+      
+      // Show detailed error alert
+      let userMessage = 'Registration failed. ';
+      
+      if (err.message.includes('Member already registered')) {
+        userMessage = 'This member is already registered with the same phone or name.';
+      } else if (err.message.includes('Invalid phone')) {
+        userMessage = 'Please enter a valid phone number.';
+      } else if (err.message.includes('Age must be')) {
+        userMessage = 'Age must be between 8 and 100 years.';
+      } else if (err.message.includes('Failed to fetch')) {
+        userMessage = 'Cannot connect to server. Please check your internet connection.';
+      } else {
+        userMessage += err.message;
+      }
+      
+      alert('❌ ' + userMessage);
+      this.error(userMessage);
+      
     } finally {
       this.loading(false);
     }
@@ -1601,18 +1636,11 @@ class App {
         photoBase64: photoInput?.dataset.base64 || ''
       };
       
-      console.log('Submitting masul registration:', formData);
       const res = await this.api('registerMasul', formData);
-      
-      if (res.success) {
-        this.showIdCard(res.data);
-        this.success('Mas\'ul registered successfully!');
-      } else {
-        throw new Error(res.message || 'Registration failed');
-      }
+      this.showIdCard(res.data);
+      this.success('Mas\'ul registered successfully!');
     } catch (err) {
       console.error('Masul registration error:', err);
-      this.error(err.message || 'Mas\'ul registration failed. Please try again.');
     } finally {
       this.loading(false);
     }
@@ -1741,6 +1769,42 @@ class App {
   }
 
   // ============================================
+  // DEBUG FUNCTION
+  // ============================================
+  static debugRegistration() {
+    console.log('=== 🐛 DEBUG REGISTRATION ===');
+    
+    // Check form
+    const form = document.getElementById('memberRegistrationForm');
+    console.log('Form exists:', !!form);
+    
+    if (form) {
+      const listeners = getEventListeners ? getEventListeners(form) : 'No getEventListeners';
+      console.log('Form event listeners:', listeners);
+    }
+    
+    // Check tabs
+    console.log('Tabs:', document.querySelectorAll('.step').length);
+    console.log('Tab sections:', document.querySelectorAll('.form-section').length);
+    
+    // Check required fields
+    const requiredFields = ['fullName', 'zone', 'branch'];
+    requiredFields.forEach(field => {
+      const el = document.getElementById(field);
+      console.log(`${field}:`, el ? `value="${el.value}"` : 'NOT FOUND');
+    });
+    
+    // Test tab click
+    const secondTab = document.querySelector('.step[data-step="contact"]');
+    if (secondTab) {
+      console.log('Clicking second tab...');
+      secondTab.click();
+    }
+    
+    alert('Check console (F12) for debug info');
+  }
+
+  // ============================================
   // FIXED DASHBOARD FUNCTIONS
   // ============================================
   static setupDashboard() {
@@ -1748,7 +1812,7 @@ class App {
     
     // Wait for DOM to be ready
     setTimeout(() => {
-      // Setup hamburger menu - FIXED
+      // Setup hamburger menu
       this.setupHamburgerMenu();
       
       // Setup menu navigation
@@ -1766,7 +1830,7 @@ class App {
       // Setup export buttons
       this.setupExportButtons();
       
-      // Load initial data - FIXED: Add immediate data load
+      // Load initial data
       this.loadOverview();
       
       console.log('✅ Dashboard setup complete');
@@ -1778,15 +1842,20 @@ class App {
     const sidebar = document.getElementById('sidebar');
     const sidebarClose = document.getElementById('sidebarClose');
     const mobileOverlay = document.querySelector('.overlay');
+    const mainContent = document.querySelector('.main-content');
     
     if (menuToggle && sidebar) {
       menuToggle.addEventListener('click', (e) => {
         e.stopPropagation();
-        sidebar.classList.toggle('active');
+        sidebar.classList.toggle('collapsed');
         
         if (window.innerWidth <= 992) {
           if (mobileOverlay) {
-            mobileOverlay.classList.toggle('active', sidebar.classList.contains('active'));
+            if (sidebar.classList.contains('collapsed')) {
+              mobileOverlay.classList.add('active');
+            } else {
+              mobileOverlay.classList.remove('active');
+            }
           }
         }
       });
@@ -1795,7 +1864,7 @@ class App {
     if (sidebarClose) {
       sidebarClose.addEventListener('click', () => {
         if (sidebar) {
-          sidebar.classList.remove('active');
+          sidebar.classList.remove('collapsed');
         }
         if (mobileOverlay) {
           mobileOverlay.classList.remove('active');
@@ -1806,36 +1875,23 @@ class App {
     if (mobileOverlay) {
       mobileOverlay.addEventListener('click', () => {
         if (sidebar) {
-          sidebar.classList.remove('active');
+          sidebar.classList.remove('collapsed');
         }
         mobileOverlay.classList.remove('active');
       });
     }
     
-    // Close sidebar when clicking outside on mobile - FIXED
+    // Close sidebar when clicking outside on mobile
     document.addEventListener('click', (e) => {
-      if (window.innerWidth <= 992 && sidebar && sidebar.classList.contains('active')) {
+      if (window.innerWidth <= 992 && sidebar && sidebar.classList.contains('collapsed')) {
         const isClickInsideSidebar = sidebar.contains(e.target);
         const isClickOnMenuToggle = menuToggle && menuToggle.contains(e.target);
         
         if (!isClickInsideSidebar && !isClickOnMenuToggle) {
-          sidebar.classList.remove('active');
+          sidebar.classList.remove('collapsed');
           if (mobileOverlay) {
             mobileOverlay.classList.remove('active');
           }
-        }
-      }
-    });
-    
-    // Handle window resize - FIXED
-    window.addEventListener('resize', () => {
-      if (window.innerWidth > 992) {
-        // On desktop, ensure the sidebar is not active and overlay is hidden
-        if (sidebar) {
-          sidebar.classList.remove('active');
-        }
-        if (mobileOverlay) {
-          mobileOverlay.classList.remove('active');
         }
       }
     });
@@ -1881,7 +1937,7 @@ class App {
           const mobileOverlay = document.querySelector('.overlay');
           
           if (sidebar) {
-            sidebar.classList.remove('active');
+            sidebar.classList.remove('collapsed');
           }
           if (mobileOverlay) {
             mobileOverlay.classList.remove('active');
@@ -2166,14 +2222,14 @@ class App {
             </tr>
           `;
         } else {
-          // FIXED: Proper data binding with fallbacks
+          // FIXED: Handle both property naming conventions
           tbody.innerHTML = members.map(member => {
-            // Extract properties with proper fallbacks
+            // Extract properties with fallbacks for different naming conventions
             const id = member.id || member.Global_ID || member.globalId || 'N/A';
             const recruitmentId = member.recruitmentId || member.Recruitment_ID || 'N/A';
             const fullName = member.fullName || member.Full_Name || 'N/A';
             const gender = member.gender || member.Gender || 'N/A';
-            const phone = member.phone || member.Phone_1 || member.phone1 || 'N/A';
+            const phone = member.phone || member.Phone_1 || 'N/A';
             const branch = member.branch || member.Branch || 'N/A';
             const level = member.level || member.Member_Level || 'N/A';
             const photoUrl = member.photoUrl || member.Photo_URL || '';
@@ -2266,7 +2322,7 @@ class App {
             const recruitmentId = m.recruitmentId || m.Recruitment_ID || 'N/A';
             const fullName = m.fullName || m.Full_Name || 'N/A';
             const email = m.email || m.Email || 'N/A';
-            const phone = m.phone || m.Phone_1 || m.phone1 || 'N/A';
+            const phone = m.phone || m.Phone_1 || 'N/A';
             const branch = m.branch || m.Branch || 'N/A';
             const recruitmentYear = m.recruitmentYear || m.Recruitment_Year || 'N/A';
             const photoUrl = m.photoUrl || m.Photo_URL || '';
@@ -2314,6 +2370,711 @@ class App {
     }
   }
 
+  static async loadPromotions() {
+    this.loading(true, 'Loading promotions...');
+    
+    try {
+      // For now, we'll load from members API with a flag
+      // In a real app, you would have a dedicated promotions API
+      const res = await this.api('getRecentActivity');
+      const activity = res.data || [];
+      
+      const promotions = activity.filter(a => a.action.includes('promotion') || a.action.includes('Promotion'));
+      
+      const tbody = document.getElementById('promotionsTableBody');
+      if (tbody) {
+        if (promotions.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="6" class="text-center empty-state">
+                <i class="fas fa-chart-line fa-3x"></i>
+                <p>No promotion logs found</p>
+              </td>
+            </tr>
+          `;
+        } else {
+          tbody.innerHTML = promotions.map(promo => `
+            <tr>
+              <td>${new Date(promo.timestamp).toLocaleDateString()}</td>
+              <td><code>${promo.description.split(' ')[0] || 'N/A'}</code></td>
+              <td><span class="badge badge-level-${promo.description.includes('to') ? promo.description.split('to')[0].trim().toLowerCase() : 'unknown'}">
+                ${promo.description.includes('to') ? promo.description.split('to')[0].trim() : 'N/A'}
+              </span></td>
+              <td><span class="badge badge-level-${promo.description.includes('to') ? promo.description.split('to')[1].trim().toLowerCase() : 'unknown'}">
+                ${promo.description.includes('to') ? promo.description.split('to')[1].trim() : 'N/A'}
+              </span></td>
+              <td>${promo.userRole || 'Admin'}</td>
+              <td>${promo.description || ''}</td>
+            </tr>
+          `).join('');
+        }
+      }
+      
+    } catch (error) {
+      console.error('Failed to load promotions:', error);
+      this.error('Failed to load promotion logs');
+    } finally {
+      this.loading(false);
+    }
+  }
+
+  static async loadTransfers() {
+    this.loading(true, 'Loading transfers...');
+    
+    try {
+      const res = await this.api('getRecentActivity');
+      const activity = res.data || [];
+      
+      const transfers = activity.filter(a => a.action.includes('transfer') || a.action.includes('Transfer'));
+      
+      const tbody = document.getElementById('transfersTableBody');
+      if (tbody) {
+        if (transfers.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="6" class="text-center empty-state">
+                <i class="fas fa-exchange-alt fa-3x"></i>
+                <p>No transfer logs found</p>
+              </td>
+            </tr>
+          `;
+        } else {
+          tbody.innerHTML = transfers.map(transfer => `
+            <tr>
+              <td>${new Date(transfer.timestamp).toLocaleDateString()}</td>
+              <td><code>${transfer.description.split(' ')[0] || 'N/A'}</code></td>
+              <td>${transfer.description.includes('from') ? transfer.description.split('from')[1]?.split('to')[0]?.trim() || 'N/A' : 'N/A'}</td>
+              <td>${transfer.description.includes('to') ? transfer.description.split('to')[1]?.trim() || 'N/A' : 'N/A'}</td>
+              <td>${transfer.userRole || 'Admin'}</td>
+              <td>${transfer.description || ''}</td>
+            </tr>
+          `).join('');
+        }
+      }
+      
+    } catch (error) {
+      console.error('Failed to load transfers:', error);
+      this.error('Failed to load transfer logs');
+    } finally {
+      this.loading(false);
+    }
+  }
+
+  static async loadLogs() {
+    this.loading(true, 'Loading system logs...');
+    
+    try {
+      const res = await this.api('getRecentActivity');
+      const logs = res.data || [];
+      
+      const tbody = document.getElementById('logsTableBody');
+      if (tbody) {
+        if (logs.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="5" class="text-center empty-state">
+                <i class="fas fa-history fa-3x"></i>
+                <p>No system logs found</p>
+              </td>
+            </tr>
+          `;
+        } else {
+          tbody.innerHTML = logs.map(log => `
+            <tr>
+              <td>${new Date(log.timestamp).toLocaleString()}</td>
+              <td><strong>${log.action}</strong></td>
+              <td>${log.description}</td>
+              <td>${log.userRole || 'System'}</td>
+              <td>${log.userBranch || 'System'}</td>
+            </tr>
+          `).join('');
+        }
+      }
+      
+    } catch (error) {
+      console.error('Failed to load logs:', error);
+      this.error('Failed to load system logs');
+    } finally {
+      this.loading(false);
+    }
+  }
+
+  static showRegisterMemberModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 20px;
+    `;
+    
+    modal.innerHTML = `
+      <div class="modal-content" style="
+        background: white;
+        border-radius: 15px;
+        max-width: 500px;
+        width: 100%;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      ">
+        <div class="modal-header" style="
+          padding: 20px;
+          background: #228B22;
+          color: white;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        ">
+          <h3 style="margin: 0; font-size: 1.3rem; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-user-plus"></i> Register New Member
+          </h3>
+          <button class="modal-close" style="
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          ">×</button>
+        </div>
+        <div class="modal-body" style="padding: 20px;">
+          <p style="margin: 0 0 15px 0; color: #666; line-height: 1.6;">
+            You will be redirected to the registration page where you can register a new member.
+          </p>
+          <p style="margin: 0 0 20px 0; color: #666; line-height: 1.6;">
+            <strong>Note:</strong> As admin, you can register members for any branch.
+          </p>
+        </div>
+        <div class="modal-footer" style="
+          padding: 20px;
+          border-top: 1px solid #e9ecef;
+          display: flex;
+          gap: 10px;
+          justify-content: flex-end;
+        ">
+          <button class="btn btn-secondary" style="
+            padding: 10px 20px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+          ">Cancel</button>
+          <button class="btn btn-primary" style="
+            padding: 10px 20px;
+            background: #228B22;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          ">
+            <i class="fas fa-external-link-alt"></i> Go to Registration
+          </button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Close button
+    const closeBtn = modal.querySelector('.modal-close');
+    const cancelBtn = modal.querySelector('.btn-secondary');
+    const goBtn = modal.querySelector('.btn-primary');
+    
+    const closeModal = () => modal.remove();
+    
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+    goBtn.addEventListener('click', () => {
+      closeModal();
+      location.href = 'register.html';
+    });
+    
+    // Close on outside click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+  }
+
+  static showRegisterMasulModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 20px;
+    `;
+    
+    modal.innerHTML = `
+      <div class="modal-content" style="
+        background: white;
+        border-radius: 15px;
+        max-width: 500px;
+        width: 100%;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      ">
+        <div class="modal-header" style="
+          padding: 20px;
+          background: #228B22;
+          color: white;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        ">
+          <h3 style="margin: 0; font-size: 1.3rem; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-user-shield"></i> Register New Mas'ul
+          </h3>
+          <button class="modal-close" style="
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          ">×</button>
+        </div>
+        <div class="modal-body" style="padding: 20px;">
+          <p style="margin: 0 0 15px 0; color: #666; line-height: 1.6;">
+            You will be redirected to the registration page where you can register a new Mas'ul leader.
+          </p>
+          <p style="margin: 0 0 15px 0; color: #666; line-height: 1.6;"><strong>Instructions:</strong></p>
+          <ol style="margin: 0 0 20px 0; padding-left: 20px; color: #666; line-height: 1.8;">
+            <li>Go to Registration Page</li>
+            <li>Toggle "Register Mas'ul" switch</li>
+            <li>Fill in the Mas'ul registration form</li>
+          </ol>
+        </div>
+        <div class="modal-footer" style="
+          padding: 20px;
+          border-top: 1px solid #e9ecef;
+          display: flex;
+          gap: 10px;
+          justify-content: flex-end;
+        ">
+          <button class="btn btn-secondary" style="
+            padding: 10px 20px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+          ">Cancel</button>
+          <button class="btn btn-primary" style="
+            padding: 10px 20px;
+            background: #228B22;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          ">
+            <i class="fas fa-external-link-alt"></i> Go to Registration
+          </button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Close button
+    const closeBtn = modal.querySelector('.modal-close');
+    const cancelBtn = modal.querySelector('.btn-secondary');
+    const goBtn = modal.querySelector('.btn-primary');
+    
+    const closeModal = () => modal.remove();
+    
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+    goBtn.addEventListener('click', () => {
+      closeModal();
+      location.href = 'register.html';
+    });
+    
+    // Close on outside click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+  }
+
+  static async viewMember(id) {
+    this.loading(true, 'Loading member details...');
+    
+    try {
+      const res = await this.api('getMemberDetails', { memberId: id });
+      const data = res.data;
+      
+      const modal = this.createMemberModal(data);
+      document.body.appendChild(modal);
+      
+    } catch (error) {
+      console.error('Failed to load member details:', error);
+      this.error('Failed to load member details');
+    } finally {
+      this.loading(false);
+    }
+  }
+
+  static createMemberModal(data) {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 20px;
+    `;
+    
+    modal.innerHTML = `
+      <div class="modal-content" style="
+        background: white;
+        border-radius: 15px;
+        max-width: 800px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      ">
+        <div class="modal-header" style="
+          padding: 20px;
+          background: #228B22;
+          color: white;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          position: sticky;
+          top: 0;
+          z-index: 1;
+        ">
+          <h3 style="margin: 0; font-size: 1.3rem; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-user"></i> Member Details
+          </h3>
+          <button class="modal-close" style="
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          ">×</button>
+        </div>
+        
+        <div class="modal-body" style="padding: 20px;">
+          ${this.createMemberDetailsHTML(data)}
+        </div>
+        
+        <div class="modal-footer" style="
+          padding: 20px;
+          border-top: 1px solid #e9ecef;
+          display: flex;
+          gap: 10px;
+          justify-content: flex-end;
+        ">
+          <button class="btn btn-secondary" style="
+            padding: 10px 20px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+          ">Close</button>
+          <button class="btn btn-primary" onclick="window.print()" style="
+            padding: 10px 20px;
+            background: #228B22;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          ">
+            <i class="fas fa-print"></i> Print Profile
+          </button>
+        </div>
+      </div>
+    `;
+    
+    // Close functionality
+    const closeBtn = modal.querySelector('.modal-close');
+    const closeBtn2 = modal.querySelector('.btn-secondary');
+    
+    const closeModal = () => modal.remove();
+    
+    closeBtn.addEventListener('click', closeModal);
+    closeBtn2.addEventListener('click', closeModal);
+    
+    // Close on outside click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+    
+    return modal;
+  }
+
+  static createMemberDetailsHTML(data) {
+    // Handle different data formats
+    const fullName = data.Full_Name || data.fullName || 'N/A';
+    const globalId = data.Global_ID || data.globalId || 'N/A';
+    const recruitmentId = data.Recruitment_ID || data.recruitmentId || 'N/A';
+    const type = data.Type || data.type || 'Member';
+    const gender = data.Gender || data.gender || 'N/A';
+    const branch = data.Branch || data.branch || 'N/A';
+    const zone = data.Zone || data.zone || 'N/A';
+    const level = data.Member_Level || data.level || 'N/A';
+    const status = data.Status || data.status || 'Active';
+    const phone1 = data.Phone_1 || data.phone1 || 'N/A';
+    const phone2 = data.Phone_2 || data.phone2 || 'N/A';
+    const email = data.Email || data.email || 'N/A';
+    const address = data.Residential_Address || data.residentialAddress || 'N/A';
+    const photoUrl = data.Photo_URL || data.photoUrl || '';
+    const birthDate = data.Birth_Date || data.birthDate || 'N/A';
+    const fatherName = data.Father_Name || data.fatherName || 'N/A';
+    const localGovernment = data.Local_Government || data.localGovernment || 'N/A';
+    const state = data.State || data.state || 'N/A';
+    const registrationDate = data.Registration_Date || data.registrationDate || 'N/A';
+    
+    return `
+      <div class="member-profile" style="
+        display: flex;
+        gap: 30px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+      ">
+        <div class="member-photo" style="flex-shrink: 0;">
+          <img src="${photoUrl ? this.fixDriveImageUrl(photoUrl) : 'https://via.placeholder.com/200/228B22/FFFFFF?text=IIM'}" 
+               alt="Photo" 
+               style="
+                 width: 200px;
+                 height: 200px;
+                 object-fit: cover;
+                 border-radius: 10px;
+                 border: 3px solid #228B22;
+               "
+               onerror="this.src='https://via.placeholder.com/200/228B22/FFFFFF?text=IIM'">
+        </div>
+        <div class="member-info" style="flex: 1; min-width: 300px;">
+          <h4 style="margin: 0 0 20px 0; color: #333; font-size: 1.5rem;">${fullName}</h4>
+          <div class="info-grid" style="
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+          ">
+            <div><strong>Global ID:</strong> <code>${globalId}</code></div>
+            <div><strong>Recruitment ID:</strong> <code>${recruitmentId}</code></div>
+            <div><strong>Type:</strong> ${type}</div>
+            <div><strong>Gender:</strong> ${gender}</div>
+            <div><strong>Branch:</strong> ${branch}</div>
+            <div><strong>Zone:</strong> ${zone}</div>
+            <div><strong>Level:</strong> ${level}</div>
+            <div><strong>Status:</strong> ${status}</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="contact-section" style="margin-bottom: 30px;">
+        <h5 style="margin: 0 0 15px 0; color: #333; font-size: 1.2rem;">Contact Information</h5>
+        <div class="info-grid" style="
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 15px;
+        ">
+          <div><strong>Phone 1:</strong> ${phone1}</div>
+          <div><strong>Phone 2:</strong> ${phone2}</div>
+          <div><strong>Email:</strong> ${email}</div>
+          <div><strong>Address:</strong> ${address}</div>
+        </div>
+      </div>
+      
+      ${type === 'Member' || type === 'member' ? `
+        <div class="personal-section">
+          <h5 style="margin: 0 0 15px 0; color: #333; font-size: 1.2rem;">Personal Information</h5>
+          <div class="info-grid" style="
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+          ">
+            <div><strong>Father's Name:</strong> ${fatherName}</div>
+            <div><strong>Birth Date:</strong> ${birthDate}</div>
+            <div><strong>Local Government:</strong> ${localGovernment}</div>
+            <div><strong>State:</strong> ${state}</div>
+            <div><strong>Registration Date:</strong> ${new Date(registrationDate).toLocaleDateString()}</div>
+          </div>
+        </div>
+      ` : ''}
+    `;
+  }
+
+  static async promoteMember(id) {
+    const newLevel = prompt(`Enter new level for member ${id}:\n\nAvailable levels: ${LEVELS.join(', ')}`);
+    
+    if (!newLevel || !LEVELS.includes(newLevel)) {
+      if (newLevel) this.error('Invalid level. Please select from: ' + LEVELS.join(', '));
+      return;
+    }
+    
+    const notes = prompt('Enter promotion notes (optional):');
+    
+    if (confirm(`Promote member to ${newLevel}?`)) {
+      this.loading(true, 'Promoting member...');
+      
+      try {
+        await this.api('promoteMember', { 
+          memberId: id, 
+          newLevel: newLevel,
+          notes: notes || ''
+        });
+        
+        this.success('Member promoted successfully!');
+        this.loadMembers();
+      } catch (error) {
+        console.error('Promotion failed:', error);
+        this.error('Promotion failed: ' + error.message);
+      } finally {
+        this.loading(false);
+      }
+    }
+  }
+
+  static async transferMember(id) {
+    const allBranches = Object.values(ZONES).flat();
+    
+    let branchList = '';
+    allBranches.forEach((branch, index) => {
+      branchList += `${index + 1}. ${branch}\n`;
+    });
+    
+    const newBranch = prompt(`Enter new branch for member ${id}:\n\nAvailable branches:\n${branchList}`);
+    
+    if (!newBranch || !allBranches.includes(newBranch)) {
+      if (newBranch) this.error('Invalid branch. Please select from the list.');
+      return;
+    }
+    
+    const notes = prompt('Enter transfer notes (optional):');
+    
+    if (confirm(`Transfer member to ${newBranch}?`)) {
+      this.loading(true, 'Transferring member...');
+      
+      try {
+        await this.api('transferMember', { 
+          memberId: id, 
+          newBranch: newBranch,
+          notes: notes || ''
+        });
+        
+        this.success('Member transferred successfully!');
+        this.loadMembers();
+      } catch (error) {
+        console.error('Transfer failed:', error);
+        this.error('Transfer failed: ' + error.message);
+      } finally {
+        this.loading(false);
+      }
+    }
+  }
+
+  static async exportData(type) {
+    if (!confirm(`Export ${type} data as CSV?`)) return;
+    
+    this.loading(true, 'Exporting data...');
+    
+    try {
+      const res = await this.api('exportData', { type: type });
+      const data = res.data;
+      
+      if (data && data.downloadUrl) {
+        window.open(data.downloadUrl, '_blank');
+        this.success(`Export completed! File: ${data.fileName}`);
+      } else {
+        throw new Error('No download URL received');
+      }
+    } catch (error) {
+      console.error('Export failed:', error);
+      this.error('Export failed: ' + (error.message || 'Unknown error'));
+    } finally {
+      this.loading(false);
+    }
+  }
+
+  static async backupSystem() {
+    if (!confirm('Create system backup? This may take a moment.')) return;
+    
+    this.loading(true, 'Creating backup...');
+    
+    try {
+      const res = await this.api('backupSystem');
+      const data = res.data;
+      
+      if (data && data.backupUrl) {
+        window.open(data.backupUrl, '_blank');
+        this.success('Backup created successfully!');
+      } else {
+        throw new Error('No backup URL received');
+      }
+    } catch (error) {
+      console.error('Backup failed:', error);
+      this.error('Backup failed: ' + (error.message || 'Unknown error'));
+    } finally {
+      this.loading(false);
+    }
+  }
+
   static logout() {
     if (confirm('Are you sure you want to logout?')) {
       localStorage.clear();
@@ -2321,6 +3082,13 @@ class App {
       setTimeout(() => {
         location.href = 'index.html';
       }, 1000);
+    }
+  }
+
+  static switchSection(section) {
+    const item = document.querySelector(`.menu-item[data-section="${section}"]`);
+    if (item) {
+      item.click();
     }
   }
 }
