@@ -1,6 +1,6 @@
 // app.js - COMPLETE FIXED FRONTEND FOR INTIZARUL IMAMUL MUNTAZAR
-// VERSION: 5.0.0 - COMPLETELY FIXED AND ENHANCED
-// THIS IS THE COMPLETE VERSION WITH ALL FIXES APPLIED
+// VERSION: 5.1.0 - ALL FIXES APPLIED
+// LAST UPDATED: 2024
 
 const CONFIG = {
   API_URL: localStorage.getItem('iim_api_url') || 'https://script.google.com/macros/s/AKfycbyTOg9VXDLayr8Xrs3t6hjmKU6TFJDFlUCkQVTpbbgLIqdd2cnWvCR2p_4kLYOFj_9b9w/exec',
@@ -27,21 +27,26 @@ class App {
   static async init() {
     console.log('🚀 App initializing...');
     
-    // Setup API URL
-    await this.setupApiUrl();
-    
-    this.setupErrorHandling();
-    this.validateSession();
-    this.setupGlobalEvents();
-    this.loadCurrentPage();
-    
-    console.log('✅ App initialized successfully');
+    try {
+      // Setup API URL
+      await this.setupApiUrl();
+      
+      this.setupErrorHandling();
+      this.validateSession();
+      this.setupGlobalEvents();
+      this.loadCurrentPage();
+      
+      console.log('✅ App initialized successfully');
+    } catch (error) {
+      console.error('❌ App initialization failed:', error);
+      this.error('Failed to initialize application. Please refresh the page.');
+    }
   }
 
   static async setupApiUrl() {
     const savedUrl = localStorage.getItem('iim_api_url');
     
-    if (savedUrl && savedUrl !== 'undefined') {
+    if (savedUrl && savedUrl !== 'undefined' && savedUrl !== 'null') {
       CONFIG.API_URL = savedUrl;
       console.log('🌐 Using saved API URL:', savedUrl);
       return;
@@ -59,22 +64,55 @@ class App {
     return new Promise((resolve) => {
       const modal = document.createElement('div');
       modal.className = 'config-modal';
+      modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        padding: 20px;
+      `;
       
       const defaultUrl = 'https://script.google.com/macros/s/AKfycbweAMLu87vyBN-2mpW7nx5aPtsFJqObtAQm8opAaWRRycJW1tC8IqofToulRZc2JDkI/exec';
       
       modal.innerHTML = `
-        <div class="config-modal-content">
-          <h2><i class="fas fa-cogs"></i> Backend Configuration</h2>
-          <p>Please enter your Google Apps Script Web App URL. This is required for the system to work.</p>
+        <div class="config-modal-content" style="
+          background: white;
+          padding: 30px;
+          border-radius: 15px;
+          max-width: 600px;
+          width: 100%;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        ">
+          <h2 style="margin: 0 0 20px 0; color: #228B22; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-cogs"></i> Backend Configuration
+          </h2>
+          <p style="margin: 0 0 20px 0; color: #666; line-height: 1.6;">
+            Please enter your Google Apps Script Web App URL. This is required for the system to work.
+          </p>
           
-          <div class="form-group">
-            <label>Backend URL:</label>
-            <input type="text" id="apiUrlInput" value="${defaultUrl}" placeholder="https://script.google.com/macros/s/.../exec">
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Backend URL:</label>
+            <input type="text" id="apiUrlInput" 
+                   style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;"
+                   value="${defaultUrl}" 
+                   placeholder="https://script.google.com/macros/s/.../exec">
           </div>
           
-          <div class="info-box">
-            <strong>How to get this URL:</strong>
-            <ol>
+          <div class="info-box" style="
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #228B22;
+          ">
+            <strong style="display: block; margin-bottom: 10px; color: #333;">How to get this URL:</strong>
+            <ol style="margin: 0; padding-left: 20px; color: #666;">
               <li>Deploy your Google Script as Web App</li>
               <li>Select "Execute as: Me" and "Who has access: Anyone"</li>
               <li>Copy the provided URL</li>
@@ -82,11 +120,37 @@ class App {
             </ol>
           </div>
           
-          <div class="config-modal-buttons">
-            <button id="testConnectionBtn" class="config-modal-test">
+          <div class="config-modal-buttons" style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <button id="testConnectionBtn" style="
+              flex: 1;
+              padding: 12px;
+              background: #17a2b8;
+              color: white;
+              border: none;
+              border-radius: 8px;
+              font-weight: 600;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 8px;
+            ">
               <i class="fas fa-plug"></i> Test Connection
             </button>
-            <button id="saveUrlBtn" class="config-modal-save">
+            <button id="saveUrlBtn" style="
+              flex: 1;
+              padding: 12px;
+              background: #228B22;
+              color: white;
+              border: none;
+              border-radius: 8px;
+              font-weight: 600;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 8px;
+            ">
               <i class="fas fa-save"></i> Save & Continue
             </button>
           </div>
@@ -106,36 +170,40 @@ class App {
         
         const resultDiv = document.getElementById('testResult');
         resultDiv.style.display = 'block';
-        resultDiv.innerHTML = '<div class="config-test-info"><i class="fas fa-sync fa-spin"></i> Testing connection...</div>';
+        resultDiv.innerHTML = '<div style="padding: 10px; background: #f8f9fa; border-radius: 5px; text-align: center; color: #666;"><i class="fas fa-sync fa-spin"></i> Testing connection...</div>';
         
         try {
-          const response = await fetch(url, { method: 'GET' });
+          const response = await fetch(url, { 
+            method: 'GET',
+            cache: 'no-cache'
+          });
+          
           if (response.ok) {
             const data = await response.json();
             if (data.success) {
               resultDiv.innerHTML = `
-                <div class="config-test-success">
+                <div style="padding: 10px; background: #d4edda; border-radius: 5px; color: #155724;">
                   <i class="fas fa-check-circle"></i> Connection successful!
-                  <div>System: ${data.system}, Version: ${data.version}</div>
+                  <div style="margin-top: 5px; font-size: 14px;">System: ${data.system || 'System'}, Version: ${data.version || '1.0'}</div>
                 </div>
               `;
             } else {
               resultDiv.innerHTML = `
-                <div class="config-test-error">
-                  <i class="fas fa-exclamation-triangle"></i> Backend error: ${data.message}
+                <div style="padding: 10px; background: #f8d7da; border-radius: 5px; color: #721c24;">
+                  <i class="fas fa-exclamation-triangle"></i> Backend error: ${data.message || 'Unknown error'}
                 </div>
               `;
             }
           } else {
             resultDiv.innerHTML = `
-              <div class="config-test-error">
+              <div style="padding: 10px; background: #f8d7da; border-radius: 5px; color: #721c24;">
                 <i class="fas fa-times-circle"></i> HTTP ${response.status}: ${response.statusText}
               </div>
             `;
           }
         } catch (error) {
           resultDiv.innerHTML = `
-            <div class="config-test-error">
+            <div style="padding: 10px; background: #f8d7da; border-radius: 5px; color: #721c24;">
               <i class="fas fa-unlink"></i> Connection failed: ${error.message}
             </div>
           `;
@@ -153,6 +221,17 @@ class App {
         localStorage.setItem('iim_api_url', url);
         modal.remove();
         resolve();
+        
+        // Refresh the page to apply new URL
+        setTimeout(() => location.reload(), 500);
+      });
+      
+      // Close modal on outside click
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.remove();
+          resolve();
+        }
       });
     });
   }
@@ -165,7 +244,7 @@ class App {
 
     window.addEventListener('unhandledrejection', (e) => {
       console.error('Unhandled promise rejection:', e.reason);
-      this.error(`Operation failed: ${e.reason.message || e.reason}`);
+      this.error(`Operation failed: ${e.reason?.message || e.reason || 'Unknown error'}`);
     });
 
     window.addEventListener('offline', () => {
@@ -207,11 +286,35 @@ class App {
   static showSessionWarning() {
     const warning = document.createElement('div');
     warning.className = 'session-warning';
+    warning.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #ffc107;
+      color: #856404;
+      padding: 15px 20px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 9999;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      animation: slideInRight 0.3s ease;
+    `;
+    
     warning.innerHTML = `
       <i class="fas fa-exclamation-triangle"></i>
       <span>Your session has expired. Please login again.</span>
-      <button onclick="App.logout()" style="background:none;border:none;color:inherit;margin-left:auto;">OK</button>
+      <button onclick="App.logout()" style="
+        background: none;
+        border: none;
+        color: inherit;
+        margin-left: auto;
+        cursor: pointer;
+        font-weight: 600;
+      ">OK</button>
     `;
+    
     document.body.appendChild(warning);
     
     setTimeout(() => {
@@ -321,7 +424,7 @@ class App {
       if (error.name === 'AbortError') {
         userMessage = 'Request timeout. Please try again.';
       } else if (error.message.includes('Failed to fetch')) {
-        userMessage = `Cannot connect to server. Please check your internet connection and API URL.`;
+        userMessage = 'Cannot connect to server. Please check your internet connection and API URL.';
       } else {
         userMessage = error.message;
       }
@@ -337,15 +440,37 @@ class App {
     if (!loader && show) {
       loader = document.createElement('div');
       loader.id = 'globalLoader';
+      loader.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        color: white;
+      `;
       loader.innerHTML = `
-        <div class="loading-spinner"></div>
-        <p>${msg}</p>
+        <div class="loading-spinner" style="
+          width: 50px;
+          height: 50px;
+          border: 5px solid #f3f3f3;
+          border-top: 5px solid #228B22;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        "></div>
+        <p style="margin-top: 20px; font-size: 16px;">${msg}</p>
       `;
       document.body.appendChild(loader);
     } else if (loader) {
       loader.style.display = show ? 'flex' : 'none';
       if (show && msg) {
-        loader.querySelector('p').textContent = msg;
+        const p = loader.querySelector('p');
+        if (p) p.textContent = msg;
       }
     }
   }
@@ -358,10 +483,39 @@ class App {
     
     const toast = document.createElement('div');
     toast.className = 'error-toast';
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #dc3545;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 9999;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      animation: slideInRight 0.3s ease;
+      max-width: 400px;
+    `;
+    
     toast.innerHTML = `
       <i class="fas fa-exclamation-circle"></i>
-      <span>${msg}</span>
-      <button onclick="this.parentElement.remove()">×</button>
+      <span style="flex: 1;">${msg}</span>
+      <button onclick="this.parentElement.remove()" style="
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 18px;
+        padding: 0;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">×</button>
     `;
     
     document.body.appendChild(toast);
@@ -381,10 +535,39 @@ class App {
     
     const toast = document.createElement('div');
     toast.className = 'success-toast';
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #28a745;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 9999;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      animation: slideInRight 0.3s ease;
+      max-width: 400px;
+    `;
+    
     toast.innerHTML = `
       <i class="fas fa-check-circle"></i>
-      <span>${msg}</span>
-      <button onclick="this.parentElement.remove()">×</button>
+      <span style="flex: 1;">${msg}</span>
+      <button onclick="this.parentElement.remove()" style="
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 18px;
+        padding: 0;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">×</button>
     `;
     
     document.body.appendChild(toast);
@@ -401,26 +584,30 @@ class App {
     document.addEventListener('click', (e) => {
       if (e.target.closest('.password-toggle')) {
         const btn = e.target.closest('.password-toggle');
-        const input = btn.closest('.input-with-icon').querySelector('input');
+        const input = btn.closest('.input-group')?.querySelector('input') || 
+                     btn.closest('.input-with-icon')?.querySelector('input');
         const icon = btn.querySelector('i');
-        if (input.type === 'password') {
-          input.type = 'text';
-          icon.classList.remove('fa-eye');
-          icon.classList.add('fa-eye-slash');
-        } else {
-          input.type = 'password';
-          icon.classList.remove('fa-eye-slash');
-          icon.classList.add('fa-eye');
+        
+        if (input && icon) {
+          if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+          } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+          }
         }
       }
     });
     
     // Form validation
-    document.querySelectorAll('input[required]').forEach(input => {
-      input.addEventListener('blur', () => {
-        this.validateField(input);
-      });
-    });
+    document.addEventListener('blur', (e) => {
+      if (e.target.matches('input[required], select[required], textarea[required]')) {
+        this.validateField(e.target);
+      }
+    }, true);
   }
 
   static validateField(input) {
@@ -470,11 +657,17 @@ class App {
   }
 
   static async setupLanding() {
-    document.getElementById('currentYear').textContent = new Date().getFullYear();
+    const currentYear = document.getElementById('currentYear');
+    if (currentYear) {
+      currentYear.textContent = new Date().getFullYear();
+    }
     
     const totalBranches = Object.values(ZONES).flat().length;
-    document.getElementById('totalBranches').textContent = totalBranches;
-    document.getElementById('totalZones').textContent = Object.keys(ZONES).length;
+    const totalBranchesEl = document.getElementById('totalBranches');
+    const totalZonesEl = document.getElementById('totalZones');
+    
+    if (totalBranchesEl) totalBranchesEl.textContent = totalBranches;
+    if (totalZonesEl) totalZonesEl.textContent = Object.keys(ZONES).length;
     
     if (CONFIG.API_URL) {
       try {
@@ -482,8 +675,11 @@ class App {
         if (response.ok) {
           const data = await response.json();
           if (data.success) {
-            document.getElementById('totalMembers').textContent = data.data?.totalMembers || 0;
-            document.getElementById('totalMasul').textContent = data.data?.totalMasul || 0;
+            const totalMembersEl = document.getElementById('totalMembers');
+            const totalMasulEl = document.getElementById('totalMasul');
+            
+            if (totalMembersEl) totalMembersEl.textContent = data.data?.totalMembers || 0;
+            if (totalMasulEl) totalMasulEl.textContent = data.data?.totalMasul || 0;
           }
         }
       } catch (error) {
@@ -493,31 +689,46 @@ class App {
   }
 
   // ============================================
-  // FIX 1: IMPROVED LOGIN PAGE FUNCTION - WITH REQUIRED ATTRIBUTE FIX
+  // FIXED LOGIN PAGE FUNCTION
   // ============================================
   static setupLogin() {
-    console.log('🔧 Setting up login page with fixes...');
+    console.log('🔧 Setting up login page...');
     
-    const urlParams = new URLSearchParams(location.search);
-    const roleParam = urlParams.get('role');
+    // Set current year
+    const currentYear = document.getElementById('currentYear');
+    if (currentYear) {
+      currentYear.textContent = new Date().getFullYear();
+    }
     
-    // Clear any previous login errors
-    localStorage.removeItem('loginError');
+    // Clear URL parameters to prevent conflicts
+    if (window.location.search) {
+      const url = new URL(window.location);
+      url.search = '';
+      window.history.replaceState({}, document.title, url.toString());
+    }
     
     // Initialize role buttons
-    document.querySelectorAll('.role-btn').forEach(btn => {
+    const roleButtons = document.querySelectorAll('.role-btn');
+    if (roleButtons.length === 0) {
+      console.error('Role buttons not found');
+      return;
+    }
+    
+    roleButtons.forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         
         // Remove active class from all buttons
-        document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+        roleButtons.forEach(b => b.classList.remove('active'));
         
         // Add active class to clicked button
         btn.classList.add('active');
         
         const role = btn.dataset.role;
-        document.getElementById('loginTitle').textContent = 
-          role === 'admin' ? 'Admin Login' : 'Branch Mas\'ul Login';
+        const loginTitle = document.getElementById('loginTitle');
+        if (loginTitle) {
+          loginTitle.textContent = role === 'admin' ? 'Admin Login' : 'Branch Mas\'ul Login';
+        }
         
         const branchGroup = document.getElementById('branchGroup');
         const branchSelect = document.getElementById('branchSelect');
@@ -525,15 +736,14 @@ class App {
         if (branchGroup && branchSelect) {
           if (role === 'masul') {
             branchGroup.style.display = 'block';
-            // CRITICAL FIX: Make branch required for masul ONLY
             branchSelect.required = true;
+            
             // Populate branches if needed
             if (branchSelect.options.length <= 1) {
               this.populateBranches('branchSelect');
             }
           } else {
             branchGroup.style.display = 'none';
-            // CRITICAL FIX: Remove required attribute for admin
             branchSelect.required = false;
             branchSelect.value = '';
           }
@@ -550,20 +760,22 @@ class App {
     });
     
     // Set initial role based on URL parameter or default
+    const urlParams = new URLSearchParams(location.search);
+    const roleParam = urlParams.get('role');
+    
     if (roleParam === 'masul') {
       const masulBtn = document.getElementById('masulBtn');
       if (masulBtn) {
         masulBtn.click();
       }
     } else {
-      // Default to admin
       const adminBtn = document.getElementById('adminBtn');
       if (adminBtn) {
         adminBtn.click();
       }
     }
     
-    // Populate branches initially
+    // Populate branches
     this.populateBranches('branchSelect');
     
     // Add input validation
@@ -578,7 +790,7 @@ class App {
       branchSelect.addEventListener('change', () => this.validateField(branchSelect));
     }
     
-    // FIXED: Login form submission - handle required field validation properly
+    // Login form submission
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
       loginForm.addEventListener('submit', async e => {
@@ -592,7 +804,6 @@ class App {
         const activeBtn = document.querySelector('.role-btn.active');
         if (!activeBtn) {
           this.error('Please select a role (Admin or Branch Mas\'ul)');
-          document.getElementById('adminBtn').focus();
           return;
         }
         
@@ -658,43 +869,27 @@ class App {
           if (err.message.includes('Invalid admin access code') || 
               err.message.includes('Invalid masul access code')) {
             errorMsg = 'Incorrect access code';
-            accessCodeInput.select();
-            accessCodeInput.focus();
+            if (accessCodeInput) {
+              accessCodeInput.select();
+              accessCodeInput.focus();
+            }
           } else if (err.message.includes('Branch is required')) {
             errorMsg = 'Please select your branch';
-            branchSelectElement?.focus();
+            if (branchSelectElement) {
+              branchSelectElement.focus();
+            }
           } else if (err.message.includes('Invalid branch')) {
             errorMsg = 'Selected branch is not valid';
-            branchSelectElement?.focus();
+            if (branchSelectElement) {
+              branchSelectElement.focus();
+            }
           } else if (err.message.includes('Failed to fetch')) {
             errorMsg = 'Cannot connect to server. Please check your internet connection and API URL.';
           }
           
           this.error(errorMsg);
-          
-          // Store error for retry
-          localStorage.setItem('loginError', JSON.stringify({
-            role,
-            branch,
-            timestamp: Date.now(),
-            message: errorMsg
-          }));
         }
       });
-    }
-    
-    // Check for previous login error
-    const loginError = localStorage.getItem('loginError');
-    if (loginError) {
-      try {
-        const errorData = JSON.parse(loginError);
-        if (Date.now() - errorData.timestamp < 300000) { // 5 minutes
-          this.error(`Previous login attempt failed: ${errorData.message || 'Unknown error'}`);
-        }
-        localStorage.removeItem('loginError');
-      } catch (e) {
-        // Ignore parse errors
-      }
     }
     
     // Auto-focus access code field
@@ -704,6 +899,47 @@ class App {
         accessCodeInput.focus();
       }
     }, 500);
+    
+    // Check backend status
+    setTimeout(() => {
+      this.checkBackendStatus();
+    }, 1000);
+  }
+
+  static async checkBackendStatus() {
+    const backendInfo = document.getElementById('backendInfo');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    
+    if (!backendInfo || !statusDot || !statusText) return;
+    
+    try {
+      const apiUrl = localStorage.getItem('iim_api_url') || CONFIG.API_URL;
+      
+      const response = await fetch(apiUrl, { 
+        method: 'GET',
+        cache: 'no-cache'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          statusDot.className = 'status-dot online';
+          statusText.textContent = `Connected: ${data.system || 'System'} v${data.version || '1.0'}`;
+          backendInfo.style.display = 'flex';
+          return;
+        }
+      }
+      
+      statusDot.className = 'status-dot offline';
+      statusText.textContent = 'Backend connection failed';
+      
+    } catch (error) {
+      statusDot.className = 'status-dot offline';
+      statusText.textContent = 'Cannot connect to backend';
+    }
+    
+    backendInfo.style.display = 'flex';
   }
 
   // ============================================
@@ -762,7 +998,7 @@ class App {
     // Only populate if empty or has only default option
     if (select.options.length > 1) return;
     
-    select.innerHTML = '<option value="">Select Branch</option>';
+    select.innerHTML = '<option value="">-- Please select your branch --</option>';
     
     Object.entries(ZONES).forEach(([zone, branches]) => {
       const group = document.createElement('optgroup');
@@ -826,12 +1062,246 @@ class App {
   }
 
   // ============================================
-  // FIX 2: COMPRESS PHOTO FUNCTION - Return null not empty string
+  // FIXED REGISTRATION PAGE
   // ============================================
+  static setupRegister() {
+    console.log('Setting up registration page...');
+    
+    // Wait for DOM to be ready
+    setTimeout(() => {
+      // Show current user info
+      const userName = localStorage.getItem('userName') || 'User';
+      const userBranch = localStorage.getItem('userBranch');
+      const currentBranch = document.getElementById('currentBranch');
+      
+      if (currentBranch) {
+        currentBranch.textContent = userBranch ? `Branch: ${userBranch}` : `User: ${userName}`;
+      }
+      
+      // Admin can register Mas'ul
+      const userRole = localStorage.getItem('userRole');
+      const masulToggleContainer = document.getElementById('masulToggleContainer');
+      
+      if (masulToggleContainer && userRole === 'admin') {
+        masulToggleContainer.style.display = 'block';
+      }
+      
+      // Initialize form elements
+      this.populateZones('zone', 'branch');
+      this.populateYears('recruitmentYear');
+      this.setupPhoto('photoUpload', 'photoInput', 'photoPreview');
+      
+      // Set date limits
+      const today = new Date();
+      const minDate = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
+      const maxDate = new Date(today.getFullYear() - 8, today.getMonth(), today.getDate());
+      
+      const birthDate = document.getElementById('birthDate');
+      const masulBirthDate = document.getElementById('masulBirthDate');
+      
+      if (birthDate) {
+        birthDate.setAttribute('min', minDate.toISOString().split('T')[0]);
+        birthDate.setAttribute('max', maxDate.toISOString().split('T')[0]);
+      }
+      
+      if (masulBirthDate) {
+        masulBirthDate.setAttribute('min', minDate.toISOString().split('T')[0]);
+        masulBirthDate.setAttribute('max', maxDate.toISOString().split('T')[0]);
+      }
+      
+      // Phone validation
+      document.querySelectorAll('input[type="tel"]').forEach(input => {
+        input.addEventListener('input', function(e) {
+          this.value = this.value.replace(/[^0-9+]/g, '');
+        });
+      });
+      
+      // Setup tab switching with proper event delegation
+      this.setupFormTabs();
+      
+      // Member registration form
+      const memberForm = document.getElementById('memberRegistrationForm');
+      if (memberForm) {
+        memberForm.addEventListener('submit', async e => {
+          e.preventDefault();
+          await this.handleMemberRegistration();
+        });
+      }
+      
+      // Mas'ul registration toggle
+      const masulToggle = document.getElementById('masulToggle');
+      if (masulToggle) {
+        masulToggle.addEventListener('change', e => {
+          const showMasulForm = e.target.checked;
+          
+          const formTitle = document.getElementById('formTitle');
+          const memberFormSection = document.getElementById('memberFormSection');
+          const masulFormSection = document.getElementById('masulFormSection');
+          
+          if (formTitle) {
+            formTitle.textContent = showMasulForm ? 'Mas\'ul Registration' : 'Member Registration (Muntazirun)';
+          }
+          
+          if (memberFormSection) {
+            memberFormSection.style.display = showMasulForm ? 'none' : 'block';
+          }
+          
+          if (masulFormSection) {
+            masulFormSection.style.display = showMasulForm ? 'block' : 'none';
+          }
+          
+          if (showMasulForm) {
+            this.populateZones('masulZone', 'masulBranch');
+            this.populateYears('masulRecruitmentYear');
+            this.setupPhoto('masulPhotoUpload', 'masulPhotoInput', 'masulPhotoPreview');
+          }
+        });
+      }
+      
+      // Mas'ul registration form
+      const masulForm = document.getElementById('masulRegistrationForm');
+      if (masulForm) {
+        masulForm.addEventListener('submit', async e => {
+          e.preventDefault();
+          await this.handleMasulRegistration();
+        });
+      }
+      
+      // Cancel Mas'ul form
+      const cancelMasulBtn = document.getElementById('cancelMasulForm');
+      if (cancelMasulBtn) {
+        cancelMasulBtn.addEventListener('click', () => {
+          const masulToggle = document.getElementById('masulToggle');
+          if (masulToggle) {
+            masulToggle.checked = false;
+            masulToggle.dispatchEvent(new Event('change'));
+          }
+        });
+      }
+      
+      console.log('✅ Registration page setup complete');
+    }, 100);
+  }
+
+  static setupFormTabs() {
+    const steps = document.querySelectorAll('.step');
+    const sections = document.querySelectorAll('.form-section');
+    
+    // Function to switch tabs
+    const switchTab = (stepId) => {
+      // Update steps
+      steps.forEach(step => {
+        step.classList.remove('active');
+        step.classList.remove('completed');
+      });
+      
+      const activeStep = document.querySelector(`.step[data-step="${stepId}"]`);
+      if (activeStep) {
+        activeStep.classList.add('active');
+        
+        // Mark previous steps as completed
+        const stepArray = Array.from(steps);
+        const currentIndex = stepArray.findIndex(s => s === activeStep);
+        for (let i = 0; i < currentIndex; i++) {
+          stepArray[i].classList.add('completed');
+        }
+      }
+      
+      // Show corresponding section
+      sections.forEach(section => {
+        section.classList.remove('active');
+      });
+      
+      const targetSection = document.getElementById(stepId + 'Tab');
+      if (targetSection) {
+        targetSection.classList.add('active');
+      }
+      
+      // Update progress bar
+      this.updateFormProgress(stepId);
+      
+      // Update button states
+      const prevButtons = document.querySelectorAll('.prev-tab');
+      const nextButtons = document.querySelectorAll('.next-tab');
+      
+      if (stepId === 'personal') {
+        prevButtons.forEach(btn => btn.disabled = true);
+      } else {
+        prevButtons.forEach(btn => btn.disabled = false);
+      }
+      
+      if (stepId === 'membership') {
+        nextButtons.forEach(btn => btn.style.display = 'none');
+      } else {
+        nextButtons.forEach(btn => btn.style.display = 'inline-flex');
+      }
+    };
+    
+    // Add click handlers to steps
+    steps.forEach(step => {
+      step.addEventListener('click', function() {
+        const stepId = this.dataset.step;
+        switchTab(stepId);
+      });
+    });
+    
+    // Next button handlers
+    document.querySelectorAll('.next-tab').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const currentSection = document.querySelector('.form-section.active');
+        if (!currentSection) return;
+        
+        const currentStepId = currentSection.id.replace('Tab', '');
+        const stepsOrder = ['personal', 'contact', 'membership'];
+        const currentIndex = stepsOrder.indexOf(currentStepId);
+        
+        if (currentIndex < stepsOrder.length - 1) {
+          const nextStep = stepsOrder[currentIndex + 1];
+          switchTab(nextStep);
+        }
+      });
+    });
+    
+    // Previous button handlers
+    document.querySelectorAll('.prev-tab').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const currentSection = document.querySelector('.form-section.active');
+        if (!currentSection) return;
+        
+        const currentStepId = currentSection.id.replace('Tab', '');
+        const stepsOrder = ['personal', 'contact', 'membership'];
+        const currentIndex = stepsOrder.indexOf(currentStepId);
+        
+        if (currentIndex > 0) {
+          const prevStep = stepsOrder[currentIndex - 1];
+          switchTab(prevStep);
+        }
+      });
+    });
+    
+    // Initialize with first tab
+    if (steps.length > 0) {
+      const firstStep = steps[0];
+      switchTab(firstStep.dataset.step);
+    }
+  }
+
+  static updateFormProgress(currentStep) {
+    const progressBar = document.getElementById('formProgress');
+    if (!progressBar) return;
+    
+    const steps = ['personal', 'contact', 'membership'];
+    const currentIndex = steps.indexOf(currentStep);
+    const progress = ((currentIndex + 1) / steps.length) * 100;
+    
+    progressBar.style.width = `${progress}%`;
+    progressBar.textContent = `${Math.round(progress)}%`;
+  }
+
   static async compressPhoto(file) {
     return new Promise((resolve, reject) => {
       if (!file) {
-        resolve(null); // FIXED: Return null instead of empty string
+        resolve(null);
         return;
       }
       
@@ -899,6 +1369,7 @@ class App {
     
     area.addEventListener('click', () => input.click());
     
+    // Drag and drop events
     ['dragover', 'dragenter'].forEach(event => {
       area.addEventListener(event, (e) => {
         e.preventDefault();
@@ -943,7 +1414,22 @@ class App {
         const base64 = await this.compressPhoto(file);
         preview.src = base64;
         preview.style.display = 'block';
+        preview.classList.add('show');
         input.dataset.base64 = base64;
+        
+        // Show remove button
+        const removeBtn = preview.nextElementSibling;
+        if (removeBtn && removeBtn.classList.contains('photo-remove')) {
+          removeBtn.style.display = 'flex';
+          removeBtn.onclick = () => {
+            input.value = '';
+            preview.style.display = 'none';
+            preview.classList.remove('show');
+            input.dataset.base64 = '';
+            removeBtn.style.display = 'none';
+          };
+        }
+        
         console.log('Photo compressed successfully');
       } catch (error) {
         this.error(error.message);
@@ -956,281 +1442,149 @@ class App {
     });
   }
 
-  static setupRegister() {
-    console.log('Setting up registration page...');
+  static async handleMemberRegistration() {
+    // Validate all required fields first
+    const requiredFields = [
+      'fullName', 'firstName', 'fatherName', 'birthDate', 'gender',
+      'residentialAddress', 'phone1', 'memberLevel', 'zone', 'branch',
+      'recruitmentYear'
+    ];
     
-    // Show current user info
-    const userName = localStorage.getItem('userName') || 'User';
-    const userBranch = localStorage.getItem('userBranch');
-    document.getElementById('currentBranch').textContent = 
-      userBranch ? `Branch: ${userBranch}` : `User: ${userName}`;
+    let isValid = true;
+    requiredFields.forEach(field => {
+      const element = document.getElementById(field);
+      if (element && !element.value.trim()) {
+        element.classList.add('invalid');
+        isValid = false;
+        this.error(`Please fill in ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`);
+      }
+    });
     
-    // Admin can register Mas'ul
-    const userRole = localStorage.getItem('userRole');
-    if (userRole === 'admin') {
-      document.getElementById('masulToggleContainer').style.display = 'block';
+    if (!isValid) return;
+    
+    // Validate date
+    const birthDate = new Date(document.getElementById('birthDate').value);
+    const today = new Date();
+    const minAge = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
+    const maxAge = new Date(today.getFullYear() - 8, today.getMonth(), today.getDate());
+    
+    if (birthDate < minAge || birthDate > maxAge) {
+      this.error('Age must be between 8 and 100 years');
+      return;
     }
     
-    // Initialize form elements
-    this.populateZones('zone', 'branch');
-    this.populateYears('recruitmentYear');
-    this.setupPhoto('photoUpload', 'photoInput', 'photoPreview');
+    this.loading(true, 'Registering member...');
     
-    // Set date limits - FIX 3.3: Changed from 10 to 8 years
-    const today = new Date();
-    const minDate = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
-    const maxDate = new Date(today.getFullYear() - 8, today.getMonth(), today.getDate()); // FIXED: Changed from 10 to 8
-    
-    document.getElementById('birthDate')?.setAttribute('min', minDate.toISOString().split('T')[0]);
-    document.getElementById('birthDate')?.setAttribute('max', maxDate.toISOString().split('T')[0]);
-    document.getElementById('masulBirthDate')?.setAttribute('min', minDate.toISOString().split('T')[0]);
-    document.getElementById('masulBirthDate')?.setAttribute('max', maxDate.toISOString().split('T')[0]);
-    
-    // Phone validation
-    document.querySelectorAll('input[type="tel"]').forEach(input => {
-      input.addEventListener('input', function(e) {
-        this.value = this.value.replace(/[^0-9+]/g, '');
-      });
-    });
-    
-    // FIXED: Form tabs with improved navigation - CORRECT SELECTORS
-    document.querySelectorAll('.step').forEach(step => {
-      step.addEventListener('click', () => {
-        const stepId = step.dataset.step;
-        
-        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
-        
-        step.classList.add('active');
-        document.getElementById(stepId + 'Tab').classList.add('active');
-        
-        // Update progress bar
-        this.updateFormProgress(stepId);
-      });
-    });
-    
-    // FIXED: Next/Previous buttons - CORRECT SELECTORS
-    document.querySelectorAll('.next-tab').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const currentTab = document.querySelector('.form-section.active');
-        const currentTabId = currentTab.id.replace('Tab', '');
-        const tabs = ['personal', 'contact', 'membership'];
-        const currentIndex = tabs.indexOf(currentTabId);
-        
-        if (currentIndex < tabs.length - 1) {
-          const nextTab = tabs[currentIndex + 1];
-          document.querySelector(`.step[data-step="${nextTab}"]`).click();
-        }
-      });
-    });
-    
-    document.querySelectorAll('.prev-tab').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const currentTab = document.querySelector('.form-section.active');
-        const currentTabId = currentTab.id.replace('Tab', '');
-        const tabs = ['personal', 'contact', 'membership'];
-        const currentIndex = tabs.indexOf(currentTabId);
-        
-        if (currentIndex > 0) {
-          const prevTab = tabs[currentIndex - 1];
-          document.querySelector(`.step[data-step="${prevTab}"]`).click();
-        }
-      });
-    });
-    
-    // Member registration form
-    document.getElementById('memberRegistrationForm').addEventListener('submit', async e => {
-      e.preventDefault();
-      
-      // Validate all required fields first
-      const requiredFields = [
-        'fullName', 'firstName', 'fatherName', 'birthDate', 'gender',
-        'residentialAddress', 'phone1', 'memberLevel', 'zone', 'branch',
-        'recruitmentYear'
-      ];
-      
-      let isValid = true;
-      requiredFields.forEach(field => {
-        const element = document.getElementById(field);
-        if (element && !element.value.trim()) {
-          element.classList.add('invalid');
-          isValid = false;
-          this.error(`Please fill in ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`);
-        }
-      });
-      
-      if (!isValid) return;
-      
-      // FIX 3.2: Photo is now optional - REMOVE validation
+    try {
       const photoInput = document.getElementById('photoInput');
-      // Photo is optional, no validation needed
-      console.log('Photo optional - proceeding without photo if needed');
       
-      // Validate date - FIX 3.3: Changed from 10 to 8 years
-      const birthDate = new Date(document.getElementById('birthDate').value);
-      const today = new Date();
-      const minAge = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
-      const maxAge = new Date(today.getFullYear() - 8, today.getMonth(), today.getDate()); // FIXED: Changed from 10 to 8
+      const formData = {
+        fullName: document.getElementById('fullName').value,
+        firstName: document.getElementById('firstName').value,
+        fatherName: document.getElementById('fatherName').value,
+        grandfatherName: document.getElementById('grandfatherName').value,
+        birthDate: document.getElementById('birthDate').value,
+        gender: document.getElementById('gender').value,
+        residentialAddress: document.getElementById('residentialAddress').value,
+        neighborhood: document.getElementById('neighborhood').value,
+        localGovernment: document.getElementById('localGovernment').value,
+        state: document.getElementById('state').value,
+        phone1: document.getElementById('phone1').value,
+        phone2: document.getElementById('phone2').value,
+        parentsGuardians: document.getElementById('parentsGuardians').value,
+        parentAddress: document.getElementById('parentAddress').value,
+        parentNeighborhood: document.getElementById('parentNeighborhood').value,
+        parentLGA: document.getElementById('parentLGA').value,
+        parentState: document.getElementById('parentState').value,
+        zone: document.getElementById('zone').value,
+        branch: document.getElementById('branch').value,
+        recruitmentYear: document.getElementById('recruitmentYear').value,
+        memberLevel: document.getElementById('memberLevel').value,
+        photoBase64: photoInput?.dataset.base64 || ''
+      };
       
-      if (birthDate < minAge || birthDate > maxAge) {
-        this.error('Age must be between 8 and 100 years');
-        return;
-      }
-      
-      this.loading(true, 'Registering member...');
-      
-      try {
-        const formData = {
-          fullName: document.getElementById('fullName').value,
-          firstName: document.getElementById('firstName').value,
-          fatherName: document.getElementById('fatherName').value,
-          grandfatherName: document.getElementById('grandfatherName').value,
-          birthDate: document.getElementById('birthDate').value,
-          gender: document.getElementById('gender').value,
-          residentialAddress: document.getElementById('residentialAddress').value,
-          neighborhood: document.getElementById('neighborhood').value,
-          localGovernment: document.getElementById('localGovernment').value,
-          state: document.getElementById('state').value,
-          phone1: document.getElementById('phone1').value,
-          phone2: document.getElementById('phone2').value,
-          parentsGuardians: document.getElementById('parentsGuardians').value,
-          parentAddress: document.getElementById('parentAddress').value,
-          parentNeighborhood: document.getElementById('parentNeighborhood').value,
-          parentLGA: document.getElementById('parentLGA').value,
-          parentState: document.getElementById('parentState').value,
-          zone: document.getElementById('zone').value,
-          branch: document.getElementById('branch').value,
-          recruitmentYear: document.getElementById('recruitmentYear').value,
-          memberLevel: document.getElementById('memberLevel').value,
-          photoBase64: photoInput.dataset.base64 || '' // Make optional
-        };
-        
-        const res = await this.api('registerMember', formData);
-        this.showIdCard(res.data);
-        this.success('Member registered successfully!');
-      } catch (err) {
-        console.error('Registration error:', err);
-      } finally {
-        this.loading(false);
+      const res = await this.api('registerMember', formData);
+      this.showIdCard(res.data);
+      this.success('Member registered successfully!');
+    } catch (err) {
+      console.error('Registration error:', err);
+    } finally {
+      this.loading(false);
+    }
+  }
+
+  static async handleMasulRegistration() {
+    const requiredFields = [
+      'masulFullName', 'masulFatherName', 'masulBirthDate', 'masulEmail', 'masulPhone1',
+      'masulEducationLevel', 'masulResidentialAddress', 'masulZone', 'masulBranch',
+      'masulRecruitmentYear', 'masulGender'
+    ];
+    
+    let isValid = true;
+    requiredFields.forEach(field => {
+      const element = document.getElementById(field);
+      if (element && !element.value.trim()) {
+        element.classList.add('invalid');
+        isValid = false;
+        this.error(`Please fill in ${field.replace('masul', '').replace(/([A-Z])/g, ' $1').toLowerCase()}`);
       }
     });
     
-    // Mas'ul registration toggle
-    document.getElementById('masulToggle').addEventListener('change', e => {
-      const showMasulForm = e.target.checked;
-      
-      document.getElementById('formTitle').textContent = showMasulForm 
-        ? 'Mas\'ul Registration' 
-        : 'Member Registration (Muntazirun)';
-      
-      document.getElementById('memberFormSection').style.display = showMasulForm ? 'none' : 'block';
-      document.getElementById('masulFormSection').style.display = showMasulForm ? 'block' : 'none';
-      
-      if (showMasulForm) {
-        this.populateZones('masulZone', 'masulBranch');
-        this.populateYears('masulRecruitmentYear');
-        this.setupPhoto('masulPhotoUpload', 'masulPhotoInput', 'masulPhotoPreview');
-      }
-    });
+    if (!isValid) return;
     
-    // Mas'ul registration form
-    document.getElementById('masulRegistrationForm').addEventListener('submit', async e => {
-      e.preventDefault();
-      
-      const requiredFields = [
-        'masulFullName', 'masulFatherName', 'masulBirthDate', 'masulEmail', 'masulPhone1',
-        'masulEducationLevel', 'masulResidentialAddress', 'masulZone', 'masulBranch',
-        'masulRecruitmentYear'
-      ];
-      
-      let isValid = true;
-      requiredFields.forEach(field => {
-        const element = document.getElementById(field);
-        if (element && !element.value.trim()) {
-          element.classList.add('invalid');
-          isValid = false;
-          this.error(`Please fill in ${field.replace('masul', '').replace(/([A-Z])/g, ' $1').toLowerCase()}`);
-        }
-      });
-      
-      if (!isValid) return;
-      
-      if (!document.getElementById('masulDeclaration').checked) {
-        this.error('Please accept the declaration');
-        return;
-      }
-      
-      // FIX 3.4: Make photo optional for Mas'ul
+    if (!document.getElementById('masulDeclaration').checked) {
+      this.error('Please accept the declaration');
+      return;
+    }
+    
+    this.loading(true, 'Registering Mas\'ul...');
+    
+    try {
       const photoInput = document.getElementById('masulPhotoInput');
-      // Photo is optional, no validation needed
       
-      this.loading(true, 'Registering Mas\'ul...');
+      const formData = {
+        fullName: document.getElementById('masulFullName').value,
+        fatherName: document.getElementById('masulFatherName').value,
+        birthDate: document.getElementById('masulBirthDate').value,
+        gender: document.getElementById('masulGender').value,
+        email: document.getElementById('masulEmail').value,
+        phone1: document.getElementById('masulPhone1').value,
+        phone2: document.getElementById('masulPhone2').value,
+        educationLevel: document.getElementById('masulEducationLevel').value,
+        courseStudying: document.getElementById('masulCourseStudying').value,
+        residentialAddress: document.getElementById('masulResidentialAddress').value,
+        zone: document.getElementById('masulZone').value,
+        branch: document.getElementById('masulBranch').value,
+        recruitmentYear: document.getElementById('masulRecruitmentYear').value,
+        declaration: true,
+        photoBase64: photoInput?.dataset.base64 || ''
+      };
       
-      try {
-        // FIX 3.5: Add gender to Mas'ul form data
-        const formData = {
-          fullName: document.getElementById('masulFullName').value,
-          fatherName: document.getElementById('masulFatherName').value,
-          birthDate: document.getElementById('masulBirthDate').value,
-          gender: document.getElementById('masulGender').value, // ADDED: gender field
-          email: document.getElementById('masulEmail').value,
-          phone1: document.getElementById('masulPhone1').value,
-          phone2: document.getElementById('masulPhone2').value,
-          educationLevel: document.getElementById('masulEducationLevel').value,
-          courseStudying: document.getElementById('masulCourseStudying').value,
-          residentialAddress: document.getElementById('masulResidentialAddress').value,
-          zone: document.getElementById('masulZone').value,
-          branch: document.getElementById('masulBranch').value,
-          recruitmentYear: document.getElementById('masulRecruitmentYear').value,
-          declaration: true,
-          photoBase64: photoInput.dataset.base64 || '' // Make optional
-        };
-        
-        const res = await this.api('registerMasul', formData);
-        this.showIdCard(res.data);
-        this.success('Mas\'ul registered successfully!');
-      } catch (err) {
-        console.error('Masul registration error:', err);
-      } finally {
-        this.loading(false);
-      }
-    });
-    
-    // Cancel Mas'ul form
-    document.getElementById('cancelMasulForm').addEventListener('click', () => {
-      document.getElementById('masulToggle').checked = false;
-      document.getElementById('masulToggle').dispatchEvent(new Event('change'));
-    });
+      const res = await this.api('registerMasul', formData);
+      this.showIdCard(res.data);
+      this.success('Mas\'ul registered successfully!');
+    } catch (err) {
+      console.error('Masul registration error:', err);
+    } finally {
+      this.loading(false);
+    }
   }
 
-  static updateFormProgress(currentTab) {
-    const progressBar = document.getElementById('formProgress');
-    if (!progressBar) return;
-    
-    const tabs = ['personal', 'contact', 'membership'];
-    const currentIndex = tabs.indexOf(currentTab);
-    const progress = ((currentIndex + 1) / tabs.length) * 100;
-    
-    progressBar.style.width = `${progress}%`;
-    progressBar.textContent = `${Math.round(progress)}%`;
-  }
-
-  // FIX 3.11: Fix Image Display in showIdCard Function
   static showIdCard(data) {
     const formContainer = document.getElementById('formContainer');
     const successMessage = document.getElementById('successMessage');
+    const loadingState = document.getElementById('loadingState');
     
     if (formContainer) formContainer.style.display = 'none';
     if (successMessage) successMessage.style.display = 'block';
+    if (loadingState) loadingState.style.display = 'none';
     
     // Populate ID card
     const elements = {
-      'printFullName': data.fullName,
-      'printGlobalId': data.globalId,
-      'printRecruitmentId': data.recruitmentId,
-      'printBranch': data.branch,
+      'printFullName': data.fullName || 'N/A',
+      'printGlobalId': data.globalId || 'N/A',
+      'printRecruitmentId': data.recruitmentId || 'N/A',
+      'printBranch': data.branch || 'N/A',
       'printLevel': data.level || data.memberLevel || 'N/A',
       'printDate': new Date().toLocaleDateString('en-NG', {
         weekday: 'long',
@@ -1245,66 +1599,221 @@ class App {
       if (el) el.textContent = value;
     });
     
-    // Photo - FIXED with fixDriveImageUrl
+    // Photo
     if (data.photoUrl) {
       const photoEl = document.getElementById('printPhoto');
+      const placeholderEl = document.getElementById('photoPlaceholder');
+      
       if (photoEl) {
         photoEl.src = this.fixDriveImageUrl(data.photoUrl);
         photoEl.style.display = 'block';
         photoEl.onerror = function() {
           this.style.display = 'none';
-          document.getElementById('photoPlaceholder').style.display = 'flex';
+          if (placeholderEl) {
+            placeholderEl.style.display = 'flex';
+          }
         };
-        document.getElementById('photoPlaceholder').style.display = 'none';
+        
+        if (placeholderEl) {
+          placeholderEl.style.display = 'none';
+        }
       }
     } else {
-      document.getElementById('photoPlaceholder').style.display = 'flex';
+      const placeholderEl = document.getElementById('photoPlaceholder');
       const photoEl = document.getElementById('printPhoto');
-      if (photoEl) photoEl.style.display = 'none';
+      
+      if (placeholderEl) {
+        placeholderEl.style.display = 'flex';
+      }
+      
+      if (photoEl) {
+        photoEl.style.display = 'none';
+      }
     }
     
     // Register another button
     const registerAnotherBtn = document.getElementById('registerAnother');
     if (registerAnotherBtn) {
       registerAnotherBtn.onclick = () => {
-        successMessage.style.display = 'none';
-        formContainer.style.display = 'block';
-        document.getElementById('memberRegistrationForm').reset();
-        document.getElementById('masulRegistrationForm').reset();
-        document.getElementById('photoPreview').style.display = 'none';
-        document.getElementById('masulPhotoPreview').style.display = 'none';
-        document.getElementById('photoInput').dataset.base64 = '';
-        document.getElementById('masulPhotoInput').dataset.base64 = '';
-        document.querySelector('.step[data-step="personal"]').click();
+        if (successMessage) successMessage.style.display = 'none';
+        if (formContainer) formContainer.style.display = 'block';
+        
+        // Reset forms
+        const memberForm = document.getElementById('memberRegistrationForm');
+        const masulForm = document.getElementById('masulRegistrationForm');
+        
+        if (memberForm) memberForm.reset();
+        if (masulForm) masulForm.reset();
+        
+        // Reset photos
+        const photoPreview = document.getElementById('photoPreview');
+        const masulPhotoPreview = document.getElementById('masulPhotoPreview');
+        const photoInput = document.getElementById('photoInput');
+        const masulPhotoInput = document.getElementById('masulPhotoInput');
+        
+        if (photoPreview) {
+          photoPreview.style.display = 'none';
+          photoPreview.classList.remove('show');
+        }
+        if (masulPhotoPreview) {
+          masulPhotoPreview.style.display = 'none';
+          masulPhotoPreview.classList.remove('show');
+        }
+        if (photoInput) {
+          photoInput.value = '';
+          photoInput.dataset.base64 = '';
+        }
+        if (masulPhotoInput) {
+          masulPhotoInput.value = '';
+          masulPhotoInput.dataset.base64 = '';
+        }
+        
+        // Reset to first tab
+        const firstStep = document.querySelector('.step[data-step="personal"]');
+        if (firstStep) {
+          firstStep.click();
+        }
       };
     }
   }
 
-  // FIX 3.6: Fix Hamburger Menu
+  static printIdCard() {
+    // Add print class for specific styling
+    document.body.classList.add('printing');
+    
+    // Wait a moment for styles to apply, then print
+    setTimeout(() => {
+      window.print();
+      
+      // Remove print class after printing
+      setTimeout(() => {
+        document.body.classList.remove('printing');
+      }, 1000);
+    }, 100);
+  }
+
+  // ============================================
+  // FIXED DASHBOARD FUNCTIONS
+  // ============================================
   static setupDashboard() {
     console.log('Setting up dashboard...');
     
-    // FIX: Hamburger menu toggle
-    document.getElementById('menuToggle').addEventListener('click', () => {
-      document.getElementById('sidebar').classList.toggle('collapsed');
-      document.querySelector('.main-content').classList.toggle('sidebar-collapsed');
-    });
+    // Wait for DOM to be ready
+    setTimeout(() => {
+      // Setup hamburger menu
+      this.setupHamburgerMenu();
+      
+      // Setup menu navigation
+      this.setupMenuNavigation();
+      
+      // Initialize filters
+      this.populateZones('zoneFilter', 'branchFilter');
+      
+      // Setup filter events
+      this.setupFilterEvents();
+      
+      // Setup settings form
+      this.setupSettingsForm();
+      
+      // Setup export buttons
+      this.setupExportButtons();
+      
+      // Load initial data
+      this.loadOverview();
+      
+      console.log('✅ Dashboard setup complete');
+    }, 100);
+  }
+
+  static setupHamburgerMenu() {
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarClose = document.getElementById('sidebarClose');
+    const mobileOverlay = document.querySelector('.overlay');
+    const mainContent = document.querySelector('.main-content');
     
-    // Menu navigation
-    document.querySelectorAll('.menu-item').forEach(item => {
+    if (menuToggle && sidebar) {
+      menuToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        sidebar.classList.toggle('collapsed');
+        
+        if (window.innerWidth <= 992) {
+          if (mobileOverlay) {
+            if (sidebar.classList.contains('collapsed')) {
+              mobileOverlay.classList.add('active');
+            } else {
+              mobileOverlay.classList.remove('active');
+            }
+          }
+        }
+      });
+    }
+    
+    if (sidebarClose) {
+      sidebarClose.addEventListener('click', () => {
+        if (sidebar) {
+          sidebar.classList.remove('collapsed');
+        }
+        if (mobileOverlay) {
+          mobileOverlay.classList.remove('active');
+        }
+      });
+    }
+    
+    if (mobileOverlay) {
+      mobileOverlay.addEventListener('click', () => {
+        if (sidebar) {
+          sidebar.classList.remove('collapsed');
+        }
+        mobileOverlay.classList.remove('active');
+      });
+    }
+    
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth <= 992 && sidebar && sidebar.classList.contains('collapsed')) {
+        const isClickInsideSidebar = sidebar.contains(e.target);
+        const isClickOnMenuToggle = menuToggle && menuToggle.contains(e.target);
+        
+        if (!isClickInsideSidebar && !isClickOnMenuToggle) {
+          sidebar.classList.remove('collapsed');
+          if (mobileOverlay) {
+            mobileOverlay.classList.remove('active');
+          }
+        }
+      }
+    });
+  }
+
+  static setupMenuNavigation() {
+    const menuItems = document.querySelectorAll('.menu-item');
+    const dashboardSections = document.querySelectorAll('.dashboard-section');
+    const pageTitle = document.getElementById('pageTitle');
+    
+    menuItems.forEach(item => {
       item.addEventListener('click', e => {
         e.preventDefault();
         
         const section = item.dataset.section;
         if (!section) return;
         
-        document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
-        document.querySelectorAll('.dashboard-section').forEach(s => s.classList.remove('active'));
-        
+        // Update active menu item
+        menuItems.forEach(i => i.classList.remove('active'));
         item.classList.add('active');
-        document.getElementById(section + 'Section').classList.add('active');
-        document.getElementById('pageTitle').textContent = item.textContent.trim();
         
+        // Show corresponding section
+        dashboardSections.forEach(s => s.classList.remove('active'));
+        const targetSection = document.getElementById(section + 'Section');
+        if (targetSection) {
+          targetSection.classList.add('active');
+        }
+        
+        // Update page title
+        if (pageTitle) {
+          pageTitle.textContent = item.textContent.trim();
+        }
+        
+        // Load section data
         const methodName = `load${section.charAt(0).toUpperCase() + section.slice(1)}`;
         if (this[methodName] && typeof this[methodName] === 'function') {
           this[methodName]();
@@ -1312,74 +1821,95 @@ class App {
         
         // Close sidebar on mobile after selection
         if (window.innerWidth < 992) {
-          document.getElementById('sidebar').classList.remove('collapsed');
-          document.querySelector('.main-content').classList.remove('sidebar-collapsed');
+          const sidebar = document.getElementById('sidebar');
+          const mobileOverlay = document.querySelector('.overlay');
+          
+          if (sidebar) {
+            sidebar.classList.remove('collapsed');
+          }
+          if (mobileOverlay) {
+            mobileOverlay.classList.remove('active');
+          }
         }
       });
     });
+  }
+
+  static setupFilterEvents() {
+    const zoneFilter = document.getElementById('zoneFilter');
+    const branchFilter = document.getElementById('branchFilter');
+    const applyFiltersBtn = document.getElementById('applyFilters');
+    const memberSearch = document.getElementById('memberSearch');
     
-    // Initialize filters
-    this.populateZones('zoneFilter', 'branchFilter');
+    if (zoneFilter && branchFilter) {
+      zoneFilter.addEventListener('change', () => {
+        const zone = zoneFilter.value;
+        
+        branchFilter.innerHTML = '<option value="">All Branches</option>';
+        
+        if (zone && ZONES[zone]) {
+          ZONES[zone].forEach(branch => {
+            const opt = document.createElement('option');
+            opt.value = branch;
+            opt.textContent = branch;
+            branchFilter.appendChild(opt);
+          });
+        }
+      });
+    }
     
-    // Filter events
-    document.getElementById('zoneFilter').addEventListener('change', () => {
-      const zone = document.getElementById('zoneFilter').value;
-      const branchSel = document.getElementById('branchFilter');
-      
-      branchSel.innerHTML = '<option value="">All Branches</option>';
-      
-      if (zone && ZONES[zone]) {
-        ZONES[zone].forEach(branch => {
-          const opt = document.createElement('option');
-          opt.value = branch;
-          opt.textContent = branch;
-          branchSel.appendChild(opt);
-        });
-      }
-    });
+    if (applyFiltersBtn) {
+      applyFiltersBtn.addEventListener('click', () => this.loadMembers());
+    }
     
-    document.getElementById('applyFilters').addEventListener('click', () => this.loadMembers());
-    document.getElementById('memberSearch').addEventListener('keyup', (e) => {
-      if (e.key === 'Enter') this.loadMembers();
-    });
-    
-    // Settings form
-    document.getElementById('settingsForm')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const adminCode = document.getElementById('adminAccessCode').value;
-      const masulCode = document.getElementById('masulAccessCode').value;
-      
-      if (!adminCode && !masulCode) {
-        this.error('Please enter at least one access code');
-        return;
-      }
-      
-      this.loading(true, 'Updating settings...');
-      
-      try {
-        await this.api('updateSettings', {
-          adminAccessCode: adminCode,
-          masulAccessCode: masulCode
-        });
-        this.success('Settings updated successfully');
-      } catch (error) {
-        console.error('Settings update failed:', error);
-      } finally {
-        this.loading(false);
-      }
-    });
-    
-    // Export buttons
+    if (memberSearch) {
+      memberSearch.addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') {
+          this.loadMembers();
+        }
+      });
+    }
+  }
+
+  static setupSettingsForm() {
+    const settingsForm = document.getElementById('settingsForm');
+    if (settingsForm) {
+      settingsForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const adminCode = document.getElementById('adminAccessCode').value;
+        const masulCode = document.getElementById('masulAccessCode').value;
+        
+        if (!adminCode && !masulCode) {
+          this.error('Please enter at least one access code');
+          return;
+        }
+        
+        this.loading(true, 'Updating settings...');
+        
+        try {
+          await this.api('updateSettings', {
+            adminAccessCode: adminCode,
+            masulAccessCode: masulCode
+          });
+          this.success('Settings updated successfully');
+          settingsForm.reset();
+        } catch (error) {
+          console.error('Settings update failed:', error);
+        } finally {
+          this.loading(false);
+        }
+      });
+    }
+  }
+
+  static setupExportButtons() {
     document.querySelectorAll('[data-export]').forEach(btn => {
       btn.addEventListener('click', () => {
         const type = btn.dataset.export;
         this.exportData(type);
       });
     });
-    
-    // Load initial data
-    this.loadOverview();
   }
 
   static async loadOverview() {
@@ -1387,9 +1917,9 @@ class App {
     
     try {
       const res = await this.api('getStatistics');
-      const stats = res.data;
+      const stats = res.data || {};
       
-      // FIX 3.7: Fix Statistics Display
+      // Update stats grid
       const statsGrid = document.getElementById('statsGrid');
       if (statsGrid) {
         statsGrid.innerHTML = `
@@ -1420,12 +1950,18 @@ class App {
         `;
       }
       
-      document.getElementById('membersCount').textContent = stats.totalMembers || 0;
-      document.getElementById('masulCount').textContent = stats.totalMasul || 0;
+      // Update counts in menu
+      const membersCount = document.getElementById('membersCount');
+      const masulCount = document.getElementById('masulCount');
       
+      if (membersCount) membersCount.textContent = stats.totalMembers || 0;
+      if (masulCount) masulCount.textContent = stats.totalMasul || 0;
+      
+      // Create charts
       this.createZoneChart(stats.membersPerBranch || {});
       this.createLevelChart(stats.membersPerLevel || {});
       
+      // Load recent activity
       await this.loadRecentActivity();
       
     } catch (error) {
@@ -1440,6 +1976,7 @@ class App {
     const ctx = document.getElementById('zoneChart');
     if (!ctx) return;
     
+    // Destroy existing chart
     if (ctx.chart) {
       ctx.chart.destroy();
     }
@@ -1475,6 +2012,7 @@ class App {
     const ctx = document.getElementById('levelChart');
     if (!ctx) return;
     
+    // Destroy existing chart
     if (ctx.chart) {
       ctx.chart.destroy();
     }
@@ -1546,15 +2084,19 @@ class App {
     
     try {
       const filters = {
-        zone: document.getElementById('zoneFilter').value,
-        branch: document.getElementById('branchFilter').value,
-        level: document.getElementById('levelFilter').value,
-        gender: document.getElementById('genderFilter').value,
-        search: document.getElementById('memberSearch').value
+        zone: document.getElementById('zoneFilter')?.value || '',
+        branch: document.getElementById('branchFilter')?.value || '',
+        level: document.getElementById('levelFilter')?.value || '',
+        gender: document.getElementById('genderFilter')?.value || '',
+        search: document.getElementById('memberSearch')?.value || ''
       };
       
+      console.log('Loading members with filters:', filters);
       const res = await this.api('getMembers', filters);
+      console.log('API Response:', res);
+      
       const members = res.data || [];
+      console.log('Members data:', members);
       
       const tbody = document.getElementById('membersTableBody');
       if (tbody) {
@@ -1568,43 +2110,59 @@ class App {
             </tr>
           `;
         } else {
-          // FIX 3.9: Fix Image Display in Members Table
-          tbody.innerHTML = members.map(member => `
-            <tr>
-              <td><input type="checkbox" class="selectMember" data-id="${member.id}"></td>
-              <td>
-                ${member.photoUrl ? 
-                  `<img src="${this.fixDriveImageUrl(member.photoUrl)}" class="table-photo" alt="Photo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` + 
-                  `<div class="photo-placeholder" style="display:none;">${(member.fullName || 'M').charAt(0)}</div>` : 
-                  `<div class="photo-placeholder">${(member.fullName || 'M').charAt(0)}</div>`
-                }
-              </td>
-              <td><code>${member.id}</code></td>
-              <td><code>${member.recruitmentId}</code></td>
-              <td><strong>${member.fullName}</strong></td>
-              <td><span class="badge ${member.gender === 'Brother' ? 'badge-primary' : 'badge-pink'}">${member.gender}</span></td>
-              <td>${member.phone}</td>
-              <td>${member.branch}</td>
-              <td><span class="badge badge-level-${member.level?.toLowerCase()}">${member.level}</span></td>
-              <td>
-                <div class="action-buttons">
-                  <button class="btn-icon btn-view" onclick="App.viewMember('${member.id}')" title="View Details">
-                    <i class="fas fa-eye"></i>
-                  </button>
-                  <button class="btn-icon btn-promote" onclick="App.promoteMember('${member.id}')" title="Promote">
-                    <i class="fas fa-arrow-up"></i>
-                  </button>
-                  <button class="btn-icon btn-transfer" onclick="App.transferMember('${member.id}')" title="Transfer">
-                    <i class="fas fa-exchange-alt"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          `).join('');
+          // FIXED: Handle both property naming conventions
+          tbody.innerHTML = members.map(member => {
+            // Extract properties with fallbacks for different naming conventions
+            const id = member.id || member.Global_ID || member.globalId || 'N/A';
+            const recruitmentId = member.recruitmentId || member.Recruitment_ID || 'N/A';
+            const fullName = member.fullName || member.Full_Name || 'N/A';
+            const gender = member.gender || member.Gender || 'N/A';
+            const phone = member.phone || member.Phone_1 || 'N/A';
+            const branch = member.branch || member.Branch || 'N/A';
+            const level = member.level || member.Member_Level || 'N/A';
+            const photoUrl = member.photoUrl || member.Photo_URL || '';
+            
+            // Generate photo HTML with fallback
+            const photoHtml = photoUrl ? 
+              `<img src="${this.fixDriveImageUrl(photoUrl)}" class="table-photo" alt="Photo" 
+                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : 
+              '';
+            
+            const placeholderHtml = `<div class="photo-placeholder" ${photoUrl ? 'style="display:none;"' : ''}>
+              ${(fullName || 'M').charAt(0)}
+            </div>`;
+            
+            return `
+              <tr>
+                <td><input type="checkbox" class="selectMember" data-id="${id}"></td>
+                <td>${photoHtml}${placeholderHtml}</td>
+                <td><code>${id}</code></td>
+                <td><code>${recruitmentId}</code></td>
+                <td><strong>${fullName}</strong></td>
+                <td><span class="badge ${gender === 'Brother' ? 'badge-primary' : 'badge-pink'}">${gender}</span></td>
+                <td>${phone}</td>
+                <td>${branch}</td>
+                <td><span class="badge badge-level-${level?.toLowerCase() || 'unknown'}">${level}</span></td>
+                <td>
+                  <div class="action-buttons">
+                    <button class="btn-icon btn-view" onclick="App.viewMember('${id}')" title="View Details">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn-icon btn-promote" onclick="App.promoteMember('${id}')" title="Promote">
+                      <i class="fas fa-arrow-up"></i>
+                    </button>
+                    <button class="btn-icon btn-transfer" onclick="App.transferMember('${id}')" title="Transfer">
+                      <i class="fas fa-exchange-alt"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('');
         }
       }
       
-      // Select all checkbox
+      // Setup select all checkbox
       const selectAll = document.getElementById('selectAllMembers');
       if (selectAll) {
         selectAll.checked = false;
@@ -1614,15 +2172,16 @@ class App {
         };
       }
       
+      this.success(`Loaded ${members.length} members`);
+      
     } catch (error) {
       console.error('Failed to load members:', error);
-      this.error('Failed to load members');
+      this.error('Failed to load members: ' + (error.message || 'Unknown error'));
     } finally {
       this.loading(false);
     }
   }
 
-  // FIX 3.10: Add Missing loadMasul Function and other functions
   static async loadMasul() {
     this.loading(true, 'Loading Mas\'ul...');
     
@@ -1645,33 +2204,52 @@ class App {
             </tr>
           `;
         } else {
-          tbody.innerHTML = masul.map(m => `
-            <tr>
-              <td>
-                ${m.photoUrl ? 
-                  `<img src="${this.fixDriveImageUrl(m.photoUrl)}" class="table-photo" alt="Photo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` + 
-                  `<div class="photo-placeholder" style="display:none;">${(m.fullName || m.Full_Name || 'M').charAt(0)}</div>` : 
-                  `<div class="photo-placeholder">${(m.fullName || m.Full_Name || 'M').charAt(0)}</div>`
-                }
-              </td>
-              <td><code>${m.id || m.Global_ID || 'N/A'}</code></td>
-              <td><code>${m.recruitmentId || m.Recruitment_ID || 'N/A'}</code></td>
-              <td><strong>${m.fullName || m.Full_Name || 'N/A'}</strong></td>
-              <td>${m.email || m.Email || 'N/A'}</td>
-              <td>${m.phone || m.Phone_1 || 'N/A'}</td>
-              <td>${m.branch || m.Branch || 'N/A'}</td>
-              <td>${m.recruitmentYear || m.Recruitment_Year || 'N/A'}</td>
-              <td>
-                <div class="action-buttons">
-                  <button class="btn-icon btn-view" onclick="App.viewMember('${m.id || m.Global_ID}')" title="View Details">
-                    <i class="fas fa-eye"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          `).join('');
+          tbody.innerHTML = masul.map(m => {
+            // Extract properties with fallbacks
+            const id = m.id || m.Global_ID || 'N/A';
+            const recruitmentId = m.recruitmentId || m.Recruitment_ID || 'N/A';
+            const fullName = m.fullName || m.Full_Name || 'N/A';
+            const email = m.email || m.Email || 'N/A';
+            const phone = m.phone || m.Phone_1 || 'N/A';
+            const branch = m.branch || m.Branch || 'N/A';
+            const recruitmentYear = m.recruitmentYear || m.Recruitment_Year || 'N/A';
+            const photoUrl = m.photoUrl || m.Photo_URL || '';
+            
+            // Generate photo HTML
+            const photoHtml = photoUrl ? 
+              `<img src="${this.fixDriveImageUrl(photoUrl)}" class="table-photo" alt="Photo" 
+                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : 
+              '';
+            
+            const placeholderHtml = `<div class="photo-placeholder" ${photoUrl ? 'style="display:none;"' : ''}>
+              ${(fullName || 'M').charAt(0)}
+            </div>`;
+            
+            return `
+              <tr>
+                <td>${photoHtml}${placeholderHtml}</td>
+                <td><code>${id}</code></td>
+                <td><code>${recruitmentId}</code></td>
+                <td><strong>${fullName}</strong></td>
+                <td>${email}</td>
+                <td>${phone}</td>
+                <td>${branch}</td>
+                <td>${recruitmentYear}</td>
+                <td>
+                  <div class="action-buttons">
+                    <button class="btn-icon btn-view" onclick="App.viewMember('${id}')" title="View Details">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('');
         }
       }
+      
+      this.success(`Loaded ${masul.length} Mas'ul leaders`);
+      
     } catch (error) {
       console.error('Failed to load Mas\'ul:', error);
       this.error('Failed to load Mas\'ul leaders');
@@ -1680,24 +2258,222 @@ class App {
     }
   }
 
+  static async loadPromotions() {
+    this.loading(true, 'Loading promotions...');
+    
+    try {
+      // For now, we'll load from members API with a flag
+      // In a real app, you would have a dedicated promotions API
+      const res = await this.api('getRecentActivity');
+      const activity = res.data || [];
+      
+      const promotions = activity.filter(a => a.action.includes('promotion') || a.action.includes('Promotion'));
+      
+      const tbody = document.getElementById('promotionsTableBody');
+      if (tbody) {
+        if (promotions.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="6" class="text-center empty-state">
+                <i class="fas fa-chart-line fa-3x"></i>
+                <p>No promotion logs found</p>
+              </td>
+            </tr>
+          `;
+        } else {
+          tbody.innerHTML = promotions.map(promo => `
+            <tr>
+              <td>${new Date(promo.timestamp).toLocaleDateString()}</td>
+              <td><code>${promo.description.split(' ')[0] || 'N/A'}</code></td>
+              <td><span class="badge badge-level-${promo.description.includes('to') ? promo.description.split('to')[0].trim().toLowerCase() : 'unknown'}">
+                ${promo.description.includes('to') ? promo.description.split('to')[0].trim() : 'N/A'}
+              </span></td>
+              <td><span class="badge badge-level-${promo.description.includes('to') ? promo.description.split('to')[1].trim().toLowerCase() : 'unknown'}">
+                ${promo.description.includes('to') ? promo.description.split('to')[1].trim() : 'N/A'}
+              </span></td>
+              <td>${promo.userRole || 'Admin'}</td>
+              <td>${promo.description || ''}</td>
+            </tr>
+          `).join('');
+        }
+      }
+      
+    } catch (error) {
+      console.error('Failed to load promotions:', error);
+      this.error('Failed to load promotion logs');
+    } finally {
+      this.loading(false);
+    }
+  }
+
+  static async loadTransfers() {
+    this.loading(true, 'Loading transfers...');
+    
+    try {
+      const res = await this.api('getRecentActivity');
+      const activity = res.data || [];
+      
+      const transfers = activity.filter(a => a.action.includes('transfer') || a.action.includes('Transfer'));
+      
+      const tbody = document.getElementById('transfersTableBody');
+      if (tbody) {
+        if (transfers.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="6" class="text-center empty-state">
+                <i class="fas fa-exchange-alt fa-3x"></i>
+                <p>No transfer logs found</p>
+              </td>
+            </tr>
+          `;
+        } else {
+          tbody.innerHTML = transfers.map(transfer => `
+            <tr>
+              <td>${new Date(transfer.timestamp).toLocaleDateString()}</td>
+              <td><code>${transfer.description.split(' ')[0] || 'N/A'}</code></td>
+              <td>${transfer.description.includes('from') ? transfer.description.split('from')[1]?.split('to')[0]?.trim() || 'N/A' : 'N/A'}</td>
+              <td>${transfer.description.includes('to') ? transfer.description.split('to')[1]?.trim() || 'N/A' : 'N/A'}</td>
+              <td>${transfer.userRole || 'Admin'}</td>
+              <td>${transfer.description || ''}</td>
+            </tr>
+          `).join('');
+        }
+      }
+      
+    } catch (error) {
+      console.error('Failed to load transfers:', error);
+      this.error('Failed to load transfer logs');
+    } finally {
+      this.loading(false);
+    }
+  }
+
+  static async loadLogs() {
+    this.loading(true, 'Loading system logs...');
+    
+    try {
+      const res = await this.api('getRecentActivity');
+      const logs = res.data || [];
+      
+      const tbody = document.getElementById('logsTableBody');
+      if (tbody) {
+        if (logs.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="5" class="text-center empty-state">
+                <i class="fas fa-history fa-3x"></i>
+                <p>No system logs found</p>
+              </td>
+            </tr>
+          `;
+        } else {
+          tbody.innerHTML = logs.map(log => `
+            <tr>
+              <td>${new Date(log.timestamp).toLocaleString()}</td>
+              <td><strong>${log.action}</strong></td>
+              <td>${log.description}</td>
+              <td>${log.userRole || 'System'}</td>
+              <td>${log.userBranch || 'System'}</td>
+            </tr>
+          `).join('');
+        }
+      }
+      
+    } catch (error) {
+      console.error('Failed to load logs:', error);
+      this.error('Failed to load system logs');
+    } finally {
+      this.loading(false);
+    }
+  }
+
   static showRegisterMemberModal() {
     const modal = document.createElement('div');
     modal.className = 'modal';
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 20px;
+    `;
+    
     modal.innerHTML = `
-      <div class="modal-content" style="max-width: 500px;">
-        <div class="modal-header">
-          <h3><i class="fas fa-user-plus"></i> Register New Member</h3>
-          <button class="modal-close">×</button>
+      <div class="modal-content" style="
+        background: white;
+        border-radius: 15px;
+        max-width: 500px;
+        width: 100%;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      ">
+        <div class="modal-header" style="
+          padding: 20px;
+          background: #228B22;
+          color: white;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        ">
+          <h3 style="margin: 0; font-size: 1.3rem; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-user-plus"></i> Register New Member
+          </h3>
+          <button class="modal-close" style="
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          ">×</button>
         </div>
-        <div class="modal-body">
-          <p>You will be redirected to the registration page where you can register a new member.</p>
-          <p><strong>Note:</strong> As admin, you can register members for any branch.</p>
+        <div class="modal-body" style="padding: 20px;">
+          <p style="margin: 0 0 15px 0; color: #666; line-height: 1.6;">
+            You will be redirected to the registration page where you can register a new member.
+          </p>
+          <p style="margin: 0 0 20px 0; color: #666; line-height: 1.6;">
+            <strong>Note:</strong> As admin, you can register members for any branch.
+          </p>
         </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">
-            Cancel
-          </button>
-          <button class="btn btn-primary" onclick="location.href='register.html'">
+        <div class="modal-footer" style="
+          padding: 20px;
+          border-top: 1px solid #e9ecef;
+          display: flex;
+          gap: 10px;
+          justify-content: flex-end;
+        ">
+          <button class="btn btn-secondary" style="
+            padding: 10px 20px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+          ">Cancel</button>
+          <button class="btn btn-primary" style="
+            padding: 10px 20px;
+            background: #228B22;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          ">
             <i class="fas fa-external-link-alt"></i> Go to Registration
           </button>
         </div>
@@ -1705,35 +2481,119 @@ class App {
     `;
     
     document.body.appendChild(modal);
-    modal.querySelector('.modal-close').addEventListener('click', () => modal.remove());
+    
+    // Close button
+    const closeBtn = modal.querySelector('.modal-close');
+    const cancelBtn = modal.querySelector('.btn-secondary');
+    const goBtn = modal.querySelector('.btn-primary');
+    
+    const closeModal = () => modal.remove();
+    
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+    goBtn.addEventListener('click', () => {
+      closeModal();
+      location.href = 'register.html';
+    });
+    
+    // Close on outside click
     modal.addEventListener('click', (e) => {
-      if (e.target === modal) modal.remove();
+      if (e.target === modal) {
+        closeModal();
+      }
     });
   }
 
   static showRegisterMasulModal() {
     const modal = document.createElement('div');
     modal.className = 'modal';
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 20px;
+    `;
+    
     modal.innerHTML = `
-      <div class="modal-content" style="max-width: 500px;">
-        <div class="modal-header">
-          <h3><i class="fas fa-user-shield"></i> Register New Mas'ul</h3>
-          <button class="modal-close">×</button>
+      <div class="modal-content" style="
+        background: white;
+        border-radius: 15px;
+        max-width: 500px;
+        width: 100%;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      ">
+        <div class="modal-header" style="
+          padding: 20px;
+          background: #228B22;
+          color: white;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        ">
+          <h3 style="margin: 0; font-size: 1.3rem; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-user-shield"></i> Register New Mas'ul
+          </h3>
+          <button class="modal-close" style="
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          ">×</button>
         </div>
-        <div class="modal-body">
-          <p>You will be redirected to the registration page where you can register a new Mas'ul leader.</p>
-          <p><strong>Instructions:</strong></p>
-          <ol>
+        <div class="modal-body" style="padding: 20px;">
+          <p style="margin: 0 0 15px 0; color: #666; line-height: 1.6;">
+            You will be redirected to the registration page where you can register a new Mas'ul leader.
+          </p>
+          <p style="margin: 0 0 15px 0; color: #666; line-height: 1.6;"><strong>Instructions:</strong></p>
+          <ol style="margin: 0 0 20px 0; padding-left: 20px; color: #666; line-height: 1.8;">
             <li>Go to Registration Page</li>
             <li>Toggle "Register Mas'ul" switch</li>
             <li>Fill in the Mas'ul registration form</li>
           </ol>
         </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">
-            Cancel
-          </button>
-          <button class="btn btn-primary" onclick="location.href='register.html'">
+        <div class="modal-footer" style="
+          padding: 20px;
+          border-top: 1px solid #e9ecef;
+          display: flex;
+          gap: 10px;
+          justify-content: flex-end;
+        ">
+          <button class="btn btn-secondary" style="
+            padding: 10px 20px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+          ">Cancel</button>
+          <button class="btn btn-primary" style="
+            padding: 10px 20px;
+            background: #228B22;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          ">
             <i class="fas fa-external-link-alt"></i> Go to Registration
           </button>
         </div>
@@ -1741,25 +2601,27 @@ class App {
     `;
     
     document.body.appendChild(modal);
-    modal.querySelector('.modal-close').addEventListener('click', () => modal.remove());
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) modal.remove();
-    });
-  }
-
-  static printIdCard() {
-    // Add print class for specific styling
-    document.body.classList.add('printing');
     
-    // Wait a moment for styles to apply, then print
-    setTimeout(() => {
-      window.print();
-      
-      // Remove print class after printing
-      setTimeout(() => {
-        document.body.classList.remove('printing');
-      }, 1000);
-    }, 100);
+    // Close button
+    const closeBtn = modal.querySelector('.modal-close');
+    const cancelBtn = modal.querySelector('.btn-secondary');
+    const goBtn = modal.querySelector('.btn-primary');
+    
+    const closeModal = () => modal.remove();
+    
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+    goBtn.addEventListener('click', () => {
+      closeModal();
+      location.href = 'register.html';
+    });
+    
+    // Close on outside click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
   }
 
   static async viewMember(id) {
@@ -1783,31 +2645,110 @@ class App {
   static createMemberModal(data) {
     const modal = document.createElement('div');
     modal.className = 'modal';
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 20px;
+    `;
     
     modal.innerHTML = `
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3><i class="fas fa-user"></i> Member Details</h3>
-          <button class="modal-close">×</button>
+      <div class="modal-content" style="
+        background: white;
+        border-radius: 15px;
+        max-width: 800px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      ">
+        <div class="modal-header" style="
+          padding: 20px;
+          background: #228B22;
+          color: white;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          position: sticky;
+          top: 0;
+          z-index: 1;
+        ">
+          <h3 style="margin: 0; font-size: 1.3rem; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-user"></i> Member Details
+          </h3>
+          <button class="modal-close" style="
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          ">×</button>
         </div>
         
-        <div class="modal-body">
+        <div class="modal-body" style="padding: 20px;">
           ${this.createMemberDetailsHTML(data)}
         </div>
         
-        <div class="modal-footer">
-          <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Close</button>
-          <button class="btn btn-primary" onclick="window.print()">
+        <div class="modal-footer" style="
+          padding: 20px;
+          border-top: 1px solid #e9ecef;
+          display: flex;
+          gap: 10px;
+          justify-content: flex-end;
+        ">
+          <button class="btn btn-secondary" style="
+            padding: 10px 20px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+          ">Close</button>
+          <button class="btn btn-primary" onclick="window.print()" style="
+            padding: 10px 20px;
+            background: #228B22;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          ">
             <i class="fas fa-print"></i> Print Profile
           </button>
         </div>
       </div>
     `;
     
-    modal.querySelector('.modal-close').addEventListener('click', () => modal.remove());
+    // Close functionality
+    const closeBtn = modal.querySelector('.modal-close');
+    const closeBtn2 = modal.querySelector('.btn-secondary');
+    
+    const closeModal = () => modal.remove();
+    
+    closeBtn.addEventListener('click', closeModal);
+    closeBtn2.addEventListener('click', closeModal);
+    
+    // Close on outside click
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
-        modal.remove();
+        closeModal();
       }
     });
     
@@ -1815,47 +2756,92 @@ class App {
   }
 
   static createMemberDetailsHTML(data) {
+    // Handle different data formats
+    const fullName = data.Full_Name || data.fullName || 'N/A';
+    const globalId = data.Global_ID || data.globalId || 'N/A';
+    const recruitmentId = data.Recruitment_ID || data.recruitmentId || 'N/A';
+    const type = data.Type || data.type || 'Member';
+    const gender = data.Gender || data.gender || 'N/A';
+    const branch = data.Branch || data.branch || 'N/A';
+    const zone = data.Zone || data.zone || 'N/A';
+    const level = data.Member_Level || data.level || 'N/A';
+    const status = data.Status || data.status || 'Active';
+    const phone1 = data.Phone_1 || data.phone1 || 'N/A';
+    const phone2 = data.Phone_2 || data.phone2 || 'N/A';
+    const email = data.Email || data.email || 'N/A';
+    const address = data.Residential_Address || data.residentialAddress || 'N/A';
+    const photoUrl = data.Photo_URL || data.photoUrl || '';
+    const birthDate = data.Birth_Date || data.birthDate || 'N/A';
+    const fatherName = data.Father_Name || data.fatherName || 'N/A';
+    const localGovernment = data.Local_Government || data.localGovernment || 'N/A';
+    const state = data.State || data.state || 'N/A';
+    const registrationDate = data.Registration_Date || data.registrationDate || 'N/A';
+    
     return `
-      <div class="member-profile">
-        <div class="member-photo">
-          <img src="${data.Photo_URL ? this.fixDriveImageUrl(data.Photo_URL) : 'https://via.placeholder.com/200/228B22/FFFFFF?text=IIM'}" 
-               alt="Photo" onerror="this.src='https://via.placeholder.com/200/228B22/FFFFFF?text=IIM'">
+      <div class="member-profile" style="
+        display: flex;
+        gap: 30px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+      ">
+        <div class="member-photo" style="flex-shrink: 0;">
+          <img src="${photoUrl ? this.fixDriveImageUrl(photoUrl) : 'https://via.placeholder.com/200/228B22/FFFFFF?text=IIM'}" 
+               alt="Photo" 
+               style="
+                 width: 200px;
+                 height: 200px;
+                 object-fit: cover;
+                 border-radius: 10px;
+                 border: 3px solid #228B22;
+               "
+               onerror="this.src='https://via.placeholder.com/200/228B22/FFFFFF?text=IIM'">
         </div>
-        <div class="member-info">
-          <h4>${data.Full_Name || 'N/A'}</h4>
-          <div class="info-grid">
-            <div><strong>Global ID:</strong> <code>${data.Global_ID}</code></div>
-            <div><strong>Recruitment ID:</strong> <code>${data.Recruitment_ID}</code></div>
-            <div><strong>Type:</strong> ${data.Type}</div>
-            <div><strong>Gender:</strong> ${data.Gender}</div>
-            <div><strong>Branch:</strong> ${data.Branch}</div>
-            <div><strong>Zone:</strong> ${data.Zone}</div>
-            <div><strong>Level:</strong> ${data.Member_Level}</div>
-            <div><strong>Status:</strong> ${data.Status}</div>
+        <div class="member-info" style="flex: 1; min-width: 300px;">
+          <h4 style="margin: 0 0 20px 0; color: #333; font-size: 1.5rem;">${fullName}</h4>
+          <div class="info-grid" style="
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+          ">
+            <div><strong>Global ID:</strong> <code>${globalId}</code></div>
+            <div><strong>Recruitment ID:</strong> <code>${recruitmentId}</code></div>
+            <div><strong>Type:</strong> ${type}</div>
+            <div><strong>Gender:</strong> ${gender}</div>
+            <div><strong>Branch:</strong> ${branch}</div>
+            <div><strong>Zone:</strong> ${zone}</div>
+            <div><strong>Level:</strong> ${level}</div>
+            <div><strong>Status:</strong> ${status}</div>
           </div>
         </div>
       </div>
       
-      <div class="contact-section">
-        <h5>Contact Information</h5>
-        <div class="info-grid">
-          <div><strong>Phone 1:</strong> ${data.Phone_1 || 'N/A'}</div>
-          <div><strong>Phone 2:</strong> ${data.Phone_2 || 'N/A'}</div>
-          <div><strong>Email:</strong> ${data.Email || 'N/A'}</div>
-          <div><strong>Address:</strong> ${data.Residential_Address || 'N/A'}</div>
+      <div class="contact-section" style="margin-bottom: 30px;">
+        <h5 style="margin: 0 0 15px 0; color: #333; font-size: 1.2rem;">Contact Information</h5>
+        <div class="info-grid" style="
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 15px;
+        ">
+          <div><strong>Phone 1:</strong> ${phone1}</div>
+          <div><strong>Phone 2:</strong> ${phone2}</div>
+          <div><strong>Email:</strong> ${email}</div>
+          <div><strong>Address:</strong> ${address}</div>
         </div>
       </div>
       
-      ${data.Type === 'Member' ? `
+      ${type === 'Member' || type === 'member' ? `
         <div class="personal-section">
-          <h5>Personal Information</h5>
-          <div class="info-grid">
-            <div><strong>Father's Name:</strong> ${data.Father_Name || 'N/A'}</div>
-            <div><strong>Birth Date:</strong> ${data.Birth_Date || 'N/A'}</div>
-            <div><strong>Local Government:</strong> ${data.Local_Government || 'N/A'}</div>
-            <div><strong>State:</strong> ${data.State || 'N/A'}</div>
-            <div><strong>Parents/Guardians:</strong> ${data.Parents_Guardians || 'N/A'}</div>
-            <div><strong>Registration Date:</strong> ${new Date(data.Registration_Date).toLocaleDateString()}</div>
+          <h5 style="margin: 0 0 15px 0; color: #333; font-size: 1.2rem;">Personal Information</h5>
+          <div class="info-grid" style="
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+          ">
+            <div><strong>Father's Name:</strong> ${fatherName}</div>
+            <div><strong>Birth Date:</strong> ${birthDate}</div>
+            <div><strong>Local Government:</strong> ${localGovernment}</div>
+            <div><strong>State:</strong> ${state}</div>
+            <div><strong>Registration Date:</strong> ${new Date(registrationDate).toLocaleDateString()}</div>
           </div>
         </div>
       ` : ''}
@@ -1886,6 +2872,7 @@ class App {
         this.loadMembers();
       } catch (error) {
         console.error('Promotion failed:', error);
+        this.error('Promotion failed: ' + error.message);
       } finally {
         this.loading(false);
       }
@@ -1923,6 +2910,7 @@ class App {
         this.loadMembers();
       } catch (error) {
         console.error('Transfer failed:', error);
+        this.error('Transfer failed: ' + error.message);
       } finally {
         this.loading(false);
       }
@@ -1993,17 +2981,68 @@ class App {
   }
 }
 
-// Initialize app when DOM is loaded
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded, initializing App...');
-    App.init();
-  });
-} else {
-  console.log('DOM already loaded, initializing App...');
-  App.init();
-}
+// Enhanced initialization with error handling
+window.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM fully loaded and parsed');
+  
+  // Add CSS animations if not present
+  if (!document.querySelector('#app-animations')) {
+    const style = document.createElement('style');
+    style.id = 'app-animations';
+    style.textContent = `
+      @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  
+  // Initialize the App
+  if (typeof App !== 'undefined') {
+    setTimeout(() => {
+      App.init().catch(error => {
+        console.error('Failed to initialize App:', error);
+        App.error('Failed to initialize application. Please refresh the page.');
+      });
+    }, 100);
+  } else {
+    console.error('App is not defined. Check if app.js loaded correctly.');
+    
+    // Show error message
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: #dc3545;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      z-index: 9999;
+      font-weight: 600;
+    `;
+    errorDiv.textContent = 'Error: Application failed to load. Please refresh the page.';
+    document.body.appendChild(errorDiv);
+  }
+});
+
+// Fallback initialization
+setTimeout(() => {
+  if (typeof App !== 'undefined' && typeof App.init === 'function') {
+    if (!window.appInitialized) {
+      window.appInitialized = true;
+      App.init();
+    }
+  }
+}, 500);
 
 // Make App available globally
 window.App = App;
-console.log('✅ App.js loaded successfully with ALL 16 FIXES APPLIED!');
+console.log('✅ App.js loaded successfully with ALL FIXES APPLIED!');
